@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ana Sayfa — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <main class="main-content">
+    <div id="pageContent">
+      <!-- JS ile doldurulacak -->
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['user'], 'admin-dashboard.html')) return;
+
+      const session = Auth.getSession();
+      const myTickets = DataStore.Tickets.filter({ userId: session.userId });
+      const openCount = myTickets.filter(t => t.status === 'open').length;
+      const inProgressCount = myTickets.filter(t => t.status === 'in-progress').length;
+      const resolvedCount = myTickets.filter(t => t.status === 'resolved').length;
+      const closedCount = myTickets.filter(t => t.status === 'closed').length;
+      const recentTickets = myTickets.slice(0, 5);
+
+      document.getElementById('pageContent').innerHTML = `
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Hoş Geldiniz, ${Utils.escapeHtml(session.fullName.split(' ')[0])}! 👋</h1>
+            <p class="page-subtitle">Destek taleplerinizi buradan yönetebilirsiniz.</p>
+          </div>
+          <a href="new-ticket.html" class="btn btn-primary">
+            <span>➕</span> Yeni Destek Talebi
+          </a>
+        </div>
+
+        <!-- İstatistikler -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">🎫</div>
+            <div class="stat-info">
+              <div class="stat-value">${myTickets.length}</div>
+              <div class="stat-label">Toplam Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon yellow">🔓</div>
+            <div class="stat-info">
+              <div class="stat-value">${openCount}</div>
+              <div class="stat-label">Açık Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">⚙️</div>
+            <div class="stat-info">
+              <div class="stat-value">${inProgressCount}</div>
+              <div class="stat-label">İşlemdeki Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">✅</div>
+            <div class="stat-info">
+              <div class="stat-value">${resolvedCount + closedCount}</div>
+              <div class="stat-label">Çözülen Talep</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hızlı Eylemler -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+          <a href="new-ticket.html" class="card" style="padding:20px;text-decoration:none;color:inherit;transition:var(--transition);display:flex;align-items:center;gap:14px;" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='var(--shadow)'">
+            <div style="width:48px;height:48px;background:var(--primary-light);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">➕</div>
+            <div>
+              <div style="font-weight:600;color:var(--gray-900);">Yeni Talep</div>
+              <div style="font-size:0.8rem;color:var(--gray-500);">Destek talebi oluştur</div>
+            </div>
+          </a>
+          <a href="user-tickets.html" class="card" style="padding:20px;text-decoration:none;color:inherit;transition:var(--transition);display:flex;align-items:center;gap:14px;" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='var(--shadow)'">
+            <div style="width:48px;height:48px;background:var(--warning-light);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">📋</div>
+            <div>
+              <div style="font-weight:600;color:var(--gray-900);">Taleplerim</div>
+              <div style="font-size:0.8rem;color:var(--gray-500);">Tüm taleplerinizi görün</div>
+            </div>
+          </a>
+          <a href="profile.html" class="card" style="padding:20px;text-decoration:none;color:inherit;transition:var(--transition);display:flex;align-items:center;gap:14px;" onmouseover="this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.boxShadow='var(--shadow)'">
+            <div style="width:48px;height:48px;background:var(--success-light);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">👤</div>
+            <div>
+              <div style="font-weight:600;color:var(--gray-900);">Profilim</div>
+              <div style="font-size:0.8rem;color:var(--gray-500);">Bilgilerini güncelle</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Son Talepler -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">🕐 Son Taleplerim</h3>
+            <a href="user-tickets.html" class="btn btn-secondary btn-sm">Tümünü Gör</a>
+          </div>
+          <div class="card-body" style="padding:0;">
+            ${recentTickets.length === 0 ? `
+              <div class="empty-state">
+                <div class="empty-state-icon">🎫</div>
+                <div class="empty-state-title">Henüz talep oluşturmadınız</div>
+                <div class="empty-state-text">İlk destek talebinizi oluşturmak için aşağıdaki butona tıklayın.</div>
+                <a href="new-ticket.html" class="btn btn-primary">Yeni Talep Oluştur</a>
+              </div>
+            ` : `
+              <div class="table-wrapper">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Talep No</th>
+                      <th>Başlık</th>
+                      <th>Kategori</th>
+                      <th>Öncelik</th>
+                      <th>Durum</th>
+                      <th>Tarih</th>
+                      <th>İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${recentTickets.map(t => `
+                      <tr>
+                        <td><span style="font-family:monospace;font-size:0.8rem;font-weight:700;color:var(--gray-500);">${t.ticketNo}</span></td>
+                        <td><span class="truncate" style="max-width:200px;display:block;">${Utils.escapeHtml(t.title)}</span></td>
+                        <td><span class="badge badge-category">${t.category}</span></td>
+                        <td>
+                          <span class="badge ${TicketPriority.badgeClass[t.priority]}">
+                            ${TicketPriority.icons[t.priority]} ${TicketPriority.labels[t.priority]}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge ${TicketStatus.badgeClass[t.status]}">
+                            <span class="badge-dot"></span>
+                            ${TicketStatus.labels[t.status]}
+                          </span>
+                        </td>
+                        <td class="text-muted text-sm">${Utils.timeAgo(t.createdAt)}</td>
+                        <td>
+                          <a href="ticket-detail.html?id=${t.id}" class="btn btn-outline btn-sm">Görüntüle</a>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    });
+  </script>
+</body>
+</html>

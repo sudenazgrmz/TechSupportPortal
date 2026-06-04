@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tüm Talepler — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="admin-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="page-title">🎫 Tüm Talepler</h1>
+          <p class="page-subtitle">Sistemdeki tüm destek taleplerini yönetin.</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="exportCSV()">📥 CSV İndir</button>
+        </div>
+      </div>
+
+      <!-- Özet Sekmeler -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;" id="statusTabs"></div>
+
+      <!-- Filtre Çubuğu -->
+      <div class="filter-bar">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Talep ara... (başlık, numara, kullanıcı)">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Durum:</span>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">Tümü</option>
+            <option value="open">Açık</option>
+            <option value="in-progress">İşlemde</option>
+            <option value="resolved">Çözüldü</option>
+            <option value="closed">Kapandı</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Öncelik:</span>
+          <select class="filter-select" id="priorityFilter">
+            <option value="all">Tümü</option>
+            <option value="critical">Kritik</option>
+            <option value="high">Yüksek</option>
+            <option value="medium">Orta</option>
+            <option value="low">Düşük</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Kategori:</span>
+          <select class="filter-select" id="categoryFilter">
+            <option value="all">Tümü</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Atama:</span>
+          <select class="filter-select" id="assignFilter">
+            <option value="all">Tümü</option>
+            <option value="unassigned">Atanmamış</option>
+            <option value="assigned">Atanmış</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="resetFilters()">↺ Sıfırla</button>
+      </div>
+
+      <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:0.875rem;color:var(--gray-500);" id="resultCount"></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.8rem;color:var(--gray-500);">Görünüm:</span>
+          <button class="btn btn-secondary btn-sm" id="viewTable" onclick="setView('table')">📋 Tablo</button>
+          <button class="btn btn-secondary btn-sm" id="viewCard" onclick="setView('card')">🃏 Kart</button>
+        </div>
+      </div>
+
+      <div id="ticketList"></div>
+      <div id="pagination"></div>
+    </main>
+  </div>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    const PAGE_SIZE = 10;
+    let currentPage = 1;
+    let currentView = 'table';
+    let session;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['admin', 'support'], 'user-dashboard.html')) return;
+
+      session = Auth.getSession();
+      renderSidebar();
+
+      // URL parametrelerinden filtre al
+      const urlParams = new URLSearchParams(window.location.search);
+      const statusParam = urlParams.get('status');
+      if (statusParam) document.getElementById('statusFilter').value = statusParam;
+
+      // Kategorileri doldur
+      const cats = DataStore.Categories.getAll();
+      const catFilter = document.getElementById('categoryFilter');
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catFilter.appendChild(opt);
+      });
+
+      renderStatusTabs();
+      renderTickets();
+      setupFilters();
+    });
+
+    function renderSidebar() {
+      const isAdmin = session.role === 'admin';
+      const stats = DataStore.Tickets.getStats();
+      document.getElementById('sidebar').innerHTML = `
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Ana Menü</div>
+          <a href="admin-dashboard.html" class="sidebar-link">
+            <span class="link-icon">📊</span> Dashboard
+          </a>
+          <a href="admin-tickets.html" class="sidebar-link active">
+            <span class="link-icon">🎫</span> Tüm Talepler
+            <span class="link-badge">${stats.open}</span>
+          </a>
+          ${isAdmin ? `<a href="admin-users.html" class="sidebar-link"><span class="link-icon">👥</span> Kullanıcılar</a>` : ''}
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Filtreler</div>
+          <a href="admin-tickets.html?status=open" class="sidebar-link">
+            <span class="link-icon">🔓</span> Açık Talepler
+          </a>
+          <a href="admin-tickets.html?status=in-progress" class="sidebar-link">
+            <span class="link-icon">⚙️</span> İşlemdekiler
+          </a>
+          <a href="admin-tickets.html?status=resolved" class="sidebar-link">
+            <span class="link-icon">✅</span> Çözülenler
+          </a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Hesap</div>
+          <a href="profile.html" class="sidebar-link"><span class="link-icon">👤</span> Profilim</a>
+          <button class="sidebar-link" style="border:none;background:none;width:100%;text-align:left;cursor:pointer;color:var(--danger);" onclick="NavbarComponent.handleLogout()">
+            <span class="link-icon">🚪</span> Çıkış Yap
+          </button>
+        </div>
+      `;
+    }
+
+    function renderStatusTabs() {
+      const stats = DataStore.Tickets.getStats();
+      const tabs = [
+        { label: 'Tümü', value: 'all', count: stats.total, color: 'var(--gray-600)', bg: 'rgba(100,116,139,0.14)' },
+        { label: 'Açık', value: 'open', count: stats.open, color: '#2563eb', bg: 'rgba(37,99,235,0.14)' },
+        { label: 'İşlemde', value: 'in-progress', count: stats.inProgress, color: '#d97706', bg: 'rgba(217,119,6,0.14)' },
+        { label: 'Çözüldü', value: 'resolved', count: stats.resolved, color: '#16a34a', bg: 'rgba(22,163,74,0.14)' },
+        { label: 'Kapandı', value: 'closed', count: stats.closed, color: '#94a3b8', bg: 'rgba(148,163,184,0.14)' }
+      ];
+      const currentStatus = document.getElementById('statusFilter').value;
+      document.getElementById('statusTabs').innerHTML = tabs.map(t => `
+        <button
+          class="status-tab ${currentStatus===t.value ? 'active' : ''}"
+          onclick="setStatusTab('${t.value}')"
+          style="--tab-accent:${t.color};--tab-bg:${t.bg};"
+        >
+          ${t.label}
+          <span class="status-tab-count">${t.count}</span>
+        </button>
+      `).join('');
+    }
+
+    function setStatusTab(val) {
+      document.getElementById('statusFilter').value = val;
+      currentPage = 1;
+      renderStatusTabs();
+      renderTickets();
+    }
+
+    function setView(v) {
+      currentView = v;
+      document.getElementById('viewTable').style.background = v === 'table' ? 'var(--primary)' : '';
+      document.getElementById('viewTable').style.color = v === 'table' ? 'var(--white)' : '';
+      document.getElementById('viewCard').style.background = v === 'card' ? 'var(--primary)' : '';
+      document.getElementById('viewCard').style.color = v === 'card' ? 'var(--white)' : '';
+      renderTickets();
+    }
+
+    function getFilters() {
+      const assignVal = document.getElementById('assignFilter').value;
+      return {
+        search: document.getElementById('searchInput').value,
+        status: document.getElementById('statusFilter').value,
+        priority: document.getElementById('priorityFilter').value,
+        category: document.getElementById('categoryFilter').value,
+        _assign: assignVal
+      };
+    }
+
+    function renderTickets() {
+      const filters = getFilters();
+      let tickets = DataStore.Tickets.filter({
+        search: filters.search,
+        status: filters.status,
+        priority: filters.priority,
+        category: filters.category
+      });
+
+      // Atama filtresi
+      if (filters._assign === 'unassigned') tickets = tickets.filter(t => !t.assignedTo);
+      else if (filters._assign === 'assigned') tickets = tickets.filter(t => !!t.assignedTo);
+
+      const total = tickets.length;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const paged = tickets.slice(start, start + PAGE_SIZE);
+
+      document.getElementById('resultCount').textContent =
+        total === 0 ? 'Sonuç bulunamadı.' : `${total} talep bulundu (${start+1}-${Math.min(start+PAGE_SIZE,total)})`;
+
+      const listEl = document.getElementById('ticketList');
+
+      if (paged.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-title">Talep bulunamadı</div>
+            <div class="empty-state-text">Filtre kriterlerinizi değiştirin.</div>
+            <button class="btn btn-secondary" onclick="resetFilters()">Filtreleri Temizle</button>
+          </div>
+        `;
+      } else if (currentView === 'table') {
+        listEl.innerHTML = `
+          <div class="card">
+            <div class="table-wrapper">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Talep No</th>
+                    <th>Başlık</th>
+                    <th>Kullanıcı</th>
+                    <th>Kategori</th>
+                    <th>Öncelik</th>
+                    <th>Durum</th>
+                    <th>Atanan</th>
+                    <th>Tarih</th>
+                    <th>İşlem</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${paged.map(t => {
+                    const user = DataStore.Users.getById(t.userId);
+                    const assignee = t.assignedTo ? DataStore.Users.getById(t.assignedTo) : null;
+                    return `
+                      <tr>
+                        <td><span style="font-family:monospace;font-size:0.78rem;font-weight:700;color:var(--gray-400);">${t.ticketNo}</span></td>
+                        <td>
+                          <div style="max-width:200px;">
+                            <div style="font-weight:600;font-size:0.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escapeHtml(t.title)}</div>
+                            <div style="font-size:0.72rem;color:var(--gray-400);">💬 ${t.comments.length} yorum</div>
+                          </div>
+                        </td>
+                        <td style="font-size:0.82rem;">${Utils.escapeHtml(user?.fullName || '-')}</td>
+                        <td><span class="badge badge-category">${t.category}</span></td>
+                        <td>
+                          <span class="badge ${TicketPriority.badgeClass[t.priority]}">
+                            ${TicketPriority.icons[t.priority]} ${TicketPriority.labels[t.priority]}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge ${TicketStatus.badgeClass[t.status]}">
+                            <span class="badge-dot"></span>${TicketStatus.labels[t.status]}
+                          </span>
+                        </td>
+                        <td style="font-size:0.82rem;">
+                          ${assignee ? Utils.escapeHtml(assignee.fullName) : '<span style="color:var(--gray-400);">—</span>'}
+                        </td>
+                        <td style="font-size:0.78rem;color:var(--gray-500);">${Utils.timeAgo(t.createdAt)}</td>
+                        <td>
+                          <div class="table-actions">
+                            <a href="ticket-detail.html?id=${t.id}" class="btn btn-outline btn-sm">Görüntüle</a>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = `<div class="ticket-list">${paged.map(t => {
+          const user = DataStore.Users.getById(t.userId);
+          const assignee = t.assignedTo ? DataStore.Users.getById(t.assignedTo) : null;
+          return `
+            <a href="ticket-detail.html?id=${t.id}" class="ticket-card priority-${t.priority}">
+              <div><div class="ticket-id">${t.ticketNo}</div></div>
+              <div class="ticket-content">
+                <div class="ticket-title">${Utils.escapeHtml(t.title)}</div>
+                <div class="ticket-badges">
+                  <span class="badge ${TicketStatus.badgeClass[t.status]}"><span class="badge-dot"></span>${TicketStatus.labels[t.status]}</span>
+                  <span class="badge ${TicketPriority.badgeClass[t.priority]}">${TicketPriority.icons[t.priority]} ${TicketPriority.labels[t.priority]}</span>
+                  <span class="badge badge-category">${t.category}</span>
+                </div>
+                <div class="ticket-meta" style="margin-top:8px;">
+                  <span class="ticket-meta-item">👤 ${Utils.escapeHtml(user?.fullName || '?')}</span>
+                  <span class="ticket-meta-item">📅 ${Utils.timeAgo(t.createdAt)}</span>
+                  <span class="ticket-meta-item">💬 ${t.comments.length}</span>
+                  <span class="ticket-meta-item">${assignee ? '✅ '+Utils.escapeHtml(assignee.fullName) : '⚠️ Atanmamış'}</span>
+                </div>
+              </div>
+              <span class="ticket-arrow">›</span>
+            </a>
+          `;
+        }).join('')}</div>`;
+      }
+
+      renderPagination(total);
+    }
+
+    function renderPagination(total) {
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const el = document.getElementById('pagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+      let html = '<div class="pagination">';
+      html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function goPage(p) {
+      const filters = getFilters();
+      let tickets = DataStore.Tickets.filter({ search: filters.search, status: filters.status, priority: filters.priority, category: filters.category });
+      if (filters._assign === 'unassigned') tickets = tickets.filter(t => !t.assignedTo);
+      else if (filters._assign === 'assigned') tickets = tickets.filter(t => !!t.assignedTo);
+      const totalPages = Math.ceil(tickets.length / PAGE_SIZE);
+      if (p < 1 || p > totalPages) return;
+      currentPage = p;
+      renderTickets();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setupFilters() {
+      ['searchInput', 'statusFilter', 'priorityFilter', 'categoryFilter', 'assignFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => { currentPage = 1; renderStatusTabs(); renderTickets(); });
+        el.addEventListener('change', () => { currentPage = 1; renderStatusTabs(); renderTickets(); });
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('statusFilter').value = 'all';
+      document.getElementById('priorityFilter').value = 'all';
+      document.getElementById('categoryFilter').value = 'all';
+      document.getElementById('assignFilter').value = 'all';
+      currentPage = 1;
+      renderStatusTabs();
+      renderTickets();
+    }
+
+    function exportCSV() {
+      const filters = getFilters();
+      const tickets = DataStore.Tickets.filter({ search: filters.search, status: filters.status, priority: filters.priority, category: filters.category });
+      const headers = ['Talep No', 'Başlık', 'Kategori', 'Öncelik', 'Durum', 'Kullanıcı', 'Atanan', 'Oluşturma Tarihi'];
+      const rows = tickets.map(t => {
+        const user = DataStore.Users.getById(t.userId);
+        const assignee = t.assignedTo ? DataStore.Users.getById(t.assignedTo) : null;
+        return [
+          t.ticketNo,
+          `"${t.title.replace(/"/g,'""')}"`,
+          t.category,
+          TicketPriority.labels[t.priority],
+          TicketStatus.labels[t.status],
+          user?.fullName || '-',
+          assignee?.fullName || 'Atanmamış',
+          Utils.formatDateTime(t.createdAt)
+        ].join(',');
+      });
+      const csv = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `talepler_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      Toast.success('CSV dosyası indirildi.');
+    }
+  </script>
+</body>
+</html>

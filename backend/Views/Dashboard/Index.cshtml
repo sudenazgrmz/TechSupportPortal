@@ -1,0 +1,96 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Panel";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Hoş geldiniz, @Model.CurrentUser.FullName</h1>
+    <p class="page-subtitle">@Model.CurrentUser.Role rolü için özet görünüm</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-info"><div class="stat-value">@Model.Stats.Total</div><div class="stat-label">Toplam Talep</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-value">@Model.Stats.Open</div><div class="stat-label">Açık</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-value">@Model.Stats.InProgress</div><div class="stat-label">İşlemde</div></div></div>
+    <div class="stat-card"><div class="stat-info"><div class="stat-value">@Model.Stats.Resolved</div><div class="stat-label">Çözüldü</div></div></div>
+</div>
+
+<div class="card" style="margin-bottom:24px;">
+    <div class="card-header">
+        <h2 class="card-title">Son Talepler</h2>
+        <a class="btn btn-secondary btn-sm" href="/index.html">Mevcut UI</a>
+    </div>
+    <div class="card-body">
+        @if (Model.Tickets.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-title">Kayıt bulunamadı</div>
+                <div class="empty-state-text">Bu kullanıcı için gösterilecek talep yok.</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Başlık</th>
+                            <th>Kategori</th>
+                            <th>Durum</th>
+                            <th>Öncelik</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ticket in Model.Tickets)
+                        {
+                            <tr>
+                                <td>@ticket.TicketNo</td>
+                                <td>@ticket.Title</td>
+                                <td>@ticket.Category</td>
+                                <td>@ticket.Status</td>
+                                <td>@ticket.Priority</td>
+                                <td><a class="btn btn-outline btn-sm" href="/tickets/@ticket.Id">Aç</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.Users.Count > 0)
+{
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Kullanıcılar</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ad</th>
+                            <th>E-posta</th>
+                            <th>Rol</th>
+                            <th>Aktif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model.Users)
+                        {
+                            <tr>
+                                <td>@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>@user.Role</td>
+                                <td>@(user.IsActive ? "Evet" : "Hayır")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}

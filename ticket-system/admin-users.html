@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kullanıcı Yönetimi — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <div class="admin-layout">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="admin-content">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h1 class="page-title">👥 Kullanıcı Yönetimi</h1>
+          <p class="page-subtitle">Sistem kullanıcılarını görüntüleyin ve yönetin.</p>
+        </div>
+        <button class="btn btn-primary" onclick="Modal.open('addUserModal')">
+          <span>➕</span> Yeni Kullanıcı
+        </button>
+      </div>
+
+      <!-- Filtre -->
+      <div class="filter-bar">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="searchInput" placeholder="Kullanıcı ara...">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Rol:</span>
+          <select class="filter-select" id="roleFilter">
+            <option value="all">Tümü</option>
+            <option value="admin">Yönetici</option>
+            <option value="support">Destek Ekibi</option>
+            <option value="user">Kullanıcı</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Durum:</span>
+          <select class="filter-select" id="statusFilter">
+            <option value="all">Tümü</option>
+            <option value="active">Aktif</option>
+            <option value="inactive">Pasif</option>
+          </select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="resetFilters()">↺ Sıfırla</button>
+      </div>
+
+      <div style="margin-bottom:12px;font-size:0.875rem;color:var(--gray-500);" id="resultCount"></div>
+
+      <div id="userList"></div>
+    </main>
+  </div>
+
+  <footer class="footer" id="footer"></footer>
+
+  <!-- Kullanıcı Ekle Modal -->
+  <div class="modal-overlay" id="addUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">➕ Yeni Kullanıcı Ekle</h3>
+        <button class="modal-close" onclick="Modal.close('addUserModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="addUserForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Ad Soyad <span class="required">*</span></label>
+              <input type="text" id="au_fullName" class="form-control" placeholder="Ad Soyad">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kullanıcı Adı <span class="required">*</span></label>
+              <input type="text" id="au_username" class="form-control" placeholder="kullanici_adi">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-posta <span class="required">*</span></label>
+            <input type="email" id="au_email" class="form-control" placeholder="ornek@email.com">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Şifre <span class="required">*</span></label>
+              <input type="password" id="au_password" class="form-control" placeholder="En az 8 karakter">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Rol <span class="required">*</span></label>
+              <select id="au_role" class="form-control">
+                <option value="user">Kullanıcı</option>
+                <option value="support">Destek Ekibi</option>
+                <option value="admin">Yönetici</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('addUserModal')">İptal</button>
+        <button class="btn btn-primary" onclick="addUser()">Kullanıcı Ekle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kullanıcı Düzenle Modal -->
+  <div class="modal-overlay" id="editUserModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">✏️ Kullanıcı Düzenle</h3>
+        <button class="modal-close" onclick="Modal.close('editUserModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eu_id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ad Soyad <span class="required">*</span></label>
+            <input type="text" id="eu_fullName" class="form-control">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kullanıcı Adı <span class="required">*</span></label>
+            <input type="text" id="eu_username" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">E-posta <span class="required">*</span></label>
+          <input type="email" id="eu_email" class="form-control">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Yeni Şifre</label>
+            <input type="password" id="eu_password" class="form-control" placeholder="Değiştirmek için girin">
+            <div class="form-hint">Boş bırakırsanız şifre değişmez.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rol <span class="required">*</span></label>
+            <select id="eu_role" class="form-control">
+              <option value="user">Kullanıcı</option>
+              <option value="support">Destek Ekibi</option>
+              <option value="admin">Yönetici</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('editUserModal')">İptal</button>
+        <button class="btn btn-primary" onclick="saveUser()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Silme Onay Modal -->
+  <div class="modal-overlay" id="deleteUserModal">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🗑 Kullanıcıyı Sil</h3>
+        <button class="modal-close" onclick="Modal.close('deleteUserModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger">
+          <span class="alert-icon">⚠️</span>
+          <span><strong id="deleteUserName"></strong> adlı kullanıcıyı silmek istediğinizden emin misiniz?</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('deleteUserModal')">İptal</button>
+        <button class="btn btn-danger" onclick="confirmDeleteUser()">Evet, Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let session;
+    let deleteTargetId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['admin'], 'admin-dashboard.html')) return;
+
+      session = Auth.getSession();
+      renderSidebar();
+      renderUsers();
+      setupFilters();
+    });
+
+    function renderSidebar() {
+      const stats = DataStore.Tickets.getStats();
+      document.getElementById('sidebar').innerHTML = `
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Ana Menü</div>
+          <a href="admin-dashboard.html" class="sidebar-link"><span class="link-icon">📊</span> Dashboard</a>
+          <a href="admin-tickets.html" class="sidebar-link">
+            <span class="link-icon">🎫</span> Tüm Talepler
+            <span class="link-badge">${stats.open}</span>
+          </a>
+          <a href="admin-users.html" class="sidebar-link active"><span class="link-icon">👥</span> Kullanıcılar</a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Hesap</div>
+          <a href="profile.html" class="sidebar-link"><span class="link-icon">👤</span> Profilim</a>
+          <button class="sidebar-link" style="border:none;background:none;width:100%;text-align:left;cursor:pointer;color:var(--danger);" onclick="NavbarComponent.handleLogout()">
+            <span class="link-icon">🚪</span> Çıkış Yap
+          </button>
+        </div>
+      `;
+    }
+
+    function getFilters() {
+      return {
+        search: document.getElementById('searchInput').value.toLowerCase(),
+        role: document.getElementById('roleFilter').value,
+        status: document.getElementById('statusFilter').value
+      };
+    }
+
+    function renderUsers() {
+      const filters = getFilters();
+      let users = DataStore.Users.getAll();
+
+      if (filters.search) {
+        users = users.filter(u =>
+          u.fullName.toLowerCase().includes(filters.search) ||
+          u.email.toLowerCase().includes(filters.search) ||
+          u.username.toLowerCase().includes(filters.search)
+        );
+      }
+      if (filters.role !== 'all') users = users.filter(u => u.role === filters.role);
+      if (filters.status === 'active') users = users.filter(u => u.isActive);
+      if (filters.status === 'inactive') users = users.filter(u => !u.isActive);
+
+      document.getElementById('resultCount').textContent = `${users.length} kullanıcı bulundu`;
+
+      const listEl = document.getElementById('userList');
+      if (users.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-state-icon">👥</div>
+            <div class="empty-state-title">Kullanıcı bulunamadı</div>
+            <button class="btn btn-secondary" onclick="resetFilters()">Filtreleri Temizle</button>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = `
+        <div class="card">
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Kullanıcı</th>
+                  <th>E-posta</th>
+                  <th>Kullanıcı Adı</th>
+                  <th>Rol</th>
+                  <th>Durum</th>
+                  <th>Kayıt Tarihi</th>
+                  <th>Talep Sayısı</th>
+                  <th>İşlemler</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(u => {
+                  const ticketCount = DataStore.Tickets.filter({ userId: u.id }).length;
+                  const isSelf = u.id === session.userId;
+                  return `
+                    <tr>
+                      <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <div class="user-avatar" style="width:36px;height:36px;font-size:0.8rem;background:${u.role==='admin'?'var(--warning)':u.role==='support'?'var(--success)':'var(--primary)'};">
+                            ${Utils.getInitials(u.fullName)}
+                          </div>
+                          <div>
+                            <div style="font-weight:600;font-size:0.875rem;">${Utils.escapeHtml(u.fullName)}</div>
+                            ${isSelf ? '<div style="font-size:0.72rem;color:var(--primary);">● Sen</div>' : ''}
+                          </div>
+                        </div>
+                      </td>
+                      <td style="font-size:0.82rem;">${Utils.escapeHtml(u.email)}</td>
+                      <td style="font-size:0.82rem;font-family:monospace;">@${Utils.escapeHtml(u.username)}</td>
+                      <td>
+                        <span class="role-badge ${u.role}">${UserRole.labels[u.role]}</span>
+                      </td>
+                      <td>
+                        <span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;font-weight:600;color:${u.isActive?'var(--success)':'var(--gray-400)'};">
+                          <span style="width:7px;height:7px;border-radius:50%;background:${u.isActive?'var(--success)':'var(--gray-300)'};"></span>
+                          ${u.isActive ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </td>
+                      <td style="font-size:0.78rem;color:var(--gray-500);">${Utils.formatDate(u.createdAt)}</td>
+                      <td>
+                        <span style="font-weight:700;color:var(--primary);">${ticketCount}</span>
+                      </td>
+                      <td>
+                        <div class="table-actions">
+                          <button class="btn btn-outline btn-sm" onclick="openEditModal(${u.id})">Düzenle</button>
+                          <button class="btn btn-sm ${u.isActive ? 'btn-warning' : 'btn-success'}" onclick="toggleActive(${u.id})" ${isSelf?'disabled':''} title="${u.isActive?'Pasif Yap':'Aktif Yap'}">
+                            ${u.isActive ? 'Pasif' : 'Aktif'}
+                          </button>
+                          <button class="btn btn-outline-danger btn-sm" onclick="openDeleteModal(${u.id})" ${isSelf?'disabled':''}>Sil</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupFilters() {
+      ['searchInput', 'roleFilter', 'statusFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', renderUsers);
+        el.addEventListener('change', renderUsers);
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('roleFilter').value = 'all';
+      document.getElementById('statusFilter').value = 'all';
+      renderUsers();
+    }
+
+    // Kullanıcı Ekleme
+    const addUserSchema = {
+      fullName: [{ type: 'required', message: 'Ad soyad zorunludur.' }, { type: 'minLength', value: 3 }],
+      username: [{ type: 'required', message: 'Kullanıcı adı zorunludur.' }, { type: 'minLength', value: 3 }, { type: 'pattern', value: /^[a-zA-Z0-9_]+$/, message: 'Sadece harf, rakam ve alt çizgi.' }],
+      email: [{ type: 'required', message: 'E-posta zorunludur.' }, { type: 'email' }],
+      password: [{ type: 'required', message: 'Şifre zorunludur.' }, { type: 'minLength', value: 8, message: 'En az 8 karakter.' }]
+    };
+
+    function addUser() {
+      const data = {
+        fullName: document.getElementById('au_fullName').value.trim(),
+        username: document.getElementById('au_username').value.trim(),
+        email: document.getElementById('au_email').value.trim(),
+        password: document.getElementById('au_password').value,
+        role: document.getElementById('au_role').value
+      };
+
+      const { valid, errors } = Validator.validateForm(data, addUserSchema);
+      if (!valid) {
+        Object.entries(errors).forEach(([f, msg]) => {
+          const el = document.getElementById('au_' + f);
+          if (el) Validator.showFieldError(el, msg);
+        });
+        return;
+      }
+
+      if (DataStore.Users.getByEmail(data.email)) {
+        Validator.showFieldError(document.getElementById('au_email'), 'Bu e-posta zaten kullanılıyor.');
+        return;
+      }
+      if (DataStore.Users.getByUsername(data.username)) {
+        Validator.showFieldError(document.getElementById('au_username'), 'Bu kullanıcı adı alınmış.');
+        return;
+      }
+
+      DataStore.Users.create(data);
+      Modal.close('addUserModal');
+      document.getElementById('addUserForm').reset();
+      renderUsers();
+      Toast.success('Kullanıcı başarıyla eklendi.');
+    }
+
+    // Kullanıcı Düzenleme
+    function openEditModal(id) {
+      const user = DataStore.Users.getById(id);
+      if (!user) return;
+      document.getElementById('eu_id').value = user.id;
+      document.getElementById('eu_fullName').value = user.fullName;
+      document.getElementById('eu_username').value = user.username;
+      document.getElementById('eu_email').value = user.email;
+      document.getElementById('eu_password').value = '';
+      document.getElementById('eu_role').value = user.role;
+      Modal.open('editUserModal');
+    }
+
+    function saveUser() {
+      const id = parseInt(document.getElementById('eu_id').value);
+      const data = {
+        fullName: document.getElementById('eu_fullName').value.trim(),
+        username: document.getElementById('eu_username').value.trim(),
+        email: document.getElementById('eu_email').value.trim(),
+        role: document.getElementById('eu_role').value
+      };
+      const newPass = document.getElementById('eu_password').value;
+
+      if (!data.fullName || !data.email) {
+        Toast.error('Ad soyad ve e-posta zorunludur.');
+        return;
+      }
+
+      // E-posta benzersizlik (kendisi hariç)
+      const existing = DataStore.Users.getByEmail(data.email);
+      if (existing && existing.id !== id) {
+        Validator.showFieldError(document.getElementById('eu_email'), 'Bu e-posta başka bir kullanıcıda var.');
+        return;
+      }
+
+      if (newPass) {
+        if (newPass.length < 8) {
+          Validator.showFieldError(document.getElementById('eu_password'), 'Şifre en az 8 karakter olmalıdır.');
+          return;
+        }
+        data.password = newPass;
+      }
+
+      DataStore.Users.update(id, data);
+      Modal.close('editUserModal');
+      renderUsers();
+      Toast.success('Kullanıcı güncellendi.');
+    }
+
+    // Aktif/Pasif
+    function toggleActive(id) {
+      const user = DataStore.Users.getById(id);
+      if (!user) return;
+      DataStore.Users.update(id, { isActive: !user.isActive });
+      renderUsers();
+      Toast.success(`Kullanıcı ${!user.isActive ? 'aktif' : 'pasif'} yapıldı.`);
+    }
+
+    // Silme
+    function openDeleteModal(id) {
+      const user = DataStore.Users.getById(id);
+      if (!user) return;
+      deleteTargetId = id;
+      document.getElementById('deleteUserName').textContent = user.fullName;
+      Modal.open('deleteUserModal');
+    }
+
+    function confirmDeleteUser() {
+      if (!deleteTargetId) return;
+      DataStore.Users.delete(deleteTargetId);
+      deleteTargetId = null;
+      Modal.close('deleteUserModal');
+      renderUsers();
+      Toast.success('Kullanıcı silindi.');
+    }
+  </script>
+</body>
+</html>

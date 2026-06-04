@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yeni Talep — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .char-count {
+      font-size: 0.75rem;
+      color: var(--gray-400);
+      text-align: right;
+      margin-top: 4px;
+    }
+    .char-count.warning { color: var(--warning); }
+    .char-count.danger { color: var(--danger); }
+    .priority-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .priority-option {
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .priority-option:hover { border-color: var(--primary); }
+    .priority-option.selected { border-color: var(--primary); background: var(--primary-light); }
+    .priority-option .p-icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .priority-option .p-label { font-size: 0.78rem; font-weight: 600; color: var(--gray-700); }
+    .priority-option input[type="radio"] { display: none; }
+    .preview-box {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+    .preview-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gray-400);
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <a href="user-tickets.html" style="color:var(--gray-400);font-size:0.875rem;">← Taleplerime Dön</a>
+      </div>
+      <h1 class="page-title">➕ Yeni Destek Talebi</h1>
+      <p class="page-subtitle">Sorununuzu detaylı açıklayın, size en hızlı şekilde yardımcı olalım.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;align-items:start;">
+      <!-- Form -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">📝 Talep Bilgileri</h3>
+        </div>
+        <div class="card-body">
+          <div id="alertBox"></div>
+
+          <form id="newTicketForm" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="title">
+                Konu Başlığı <span class="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                class="form-control"
+                placeholder="Sorununuzu kısaca özetleyin (min. 10 karakter)"
+                maxlength="120"
+              >
+              <div class="char-count" id="titleCount">0 / 120</div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="category">
+                  Kategori <span class="required">*</span>
+                </label>
+                <select id="category" name="category" class="form-control">
+                  <option value="">-- Kategori Seçin --</option>
+                </select>
+                <div class="form-hint">Sorununuza en uygun kategoriyi seçin.</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Öncelik <span class="required">*</span></label>
+                <div class="form-hint" style="margin-bottom:10px;">Sorununuzun aciliyetini belirtin.</div>
+                <div class="priority-selector" id="prioritySelector">
+                  <label class="priority-option selected" data-value="low">
+                    <input type="radio" name="priority" value="low" checked>
+                    <div class="p-icon">D</div>
+                    <div class="p-label">Düşük</div>
+                  </label>
+                  <label class="priority-option" data-value="medium">
+                    <input type="radio" name="priority" value="medium">
+                    <div class="p-icon">O</div>
+                    <div class="p-label">Orta</div>
+                  </label>
+                  <label class="priority-option" data-value="high">
+                    <input type="radio" name="priority" value="high">
+                    <div class="p-icon">Y</div>
+                    <div class="p-label">Yüksek</div>
+                  </label>
+                  <label class="priority-option" data-value="critical">
+                    <input type="radio" name="priority" value="critical">
+                    <div class="p-icon">K</div>
+                    <div class="p-label">Kritik</div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="description">
+                Açıklama <span class="required">*</span>
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                class="form-control"
+                rows="7"
+                placeholder="Sorununuzu detaylı açıklayın. Ne zaman başladı? Hangi adımları denediniz? Hata mesajı var mı?"
+                maxlength="2000"
+              ></textarea>
+              <div class="char-count" id="descCount">0 / 2000</div>
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap;">
+              <a href="user-tickets.html" class="btn btn-secondary">İptal</a>
+              <button type="submit" class="btn btn-primary" id="submitBtn">
+                <span>🚀</span>
+                <span id="submitBtnText">Talebi Gönder</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Önizleme & Bilgi -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <!-- Canlı Önizleme -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">👁 Önizleme</h3>
+          </div>
+          <div class="card-body">
+            <div class="preview-box" id="previewBox">
+              <div class="preview-title">Talep Önizlemesi</div>
+              <div style="font-weight:600;color:var(--gray-400);font-size:0.875rem;" id="previewTitle">Başlık girilmedi...</div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;" id="previewBadges">
+                <span class="badge badge-open"><span class="badge-dot"></span> Açık</span>
+                <span class="badge badge-low" id="previewPriority">🟢 Düşük</span>
+                <span class="badge badge-category" id="previewCategory" style="display:none;"></span>
+              </div>
+              <div style="margin-top:12px;font-size:0.8rem;color:var(--gray-500);" id="previewDesc">Açıklama girilmedi...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- İpuçları -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">💡 İpuçları</h3>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <span style="font-size:1rem;flex-shrink:0;">📌</span>
+                <div style="font-size:0.82rem;color:var(--gray-600);">Başlığı kısa ve açıklayıcı tutun.</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <span style="font-size:1rem;flex-shrink:0;">🔍</span>
+                <div style="font-size:0.82rem;color:var(--gray-600);">Hata mesajlarını ve ekran görüntülerini ekleyin.</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <span style="font-size:1rem;flex-shrink:0;">⏱</span>
+                <div style="font-size:0.82rem;color:var(--gray-600);">Sorunun ne zaman başladığını belirtin.</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;">
+                <span style="font-size:1rem;flex-shrink:0;">🎯</span>
+                <div style="font-size:0.82rem;color:var(--gray-600);">Doğru kategori seçimi daha hızlı çözüm sağlar.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Yanıt Süreleri -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">⏰ Yanıt Süreleri</h3>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100);">
+                <span style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">🔴 Kritik</span>
+                <span style="font-size:0.82rem;font-weight:600;color:var(--danger);">1 saat</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100);">
+                <span style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">🟠 Yüksek</span>
+                <span style="font-size:0.82rem;font-weight:600;color:var(--warning);">4 saat</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100);">
+                <span style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">🟡 Orta</span>
+                <span style="font-size:0.82rem;font-weight:600;color:var(--info);">1 iş günü</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+                <span style="font-size:0.82rem;display:flex;align-items:center;gap:6px;">🟢 Düşük</span>
+                <span style="font-size:0.82rem;font-weight:600;color:var(--success);">3 iş günü</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['user'], 'admin-dashboard.html')) return;
+
+      // Kategorileri doldur
+      const cats = DataStore.Categories.getAll();
+      const catSelect = document.getElementById('category');
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catSelect.appendChild(opt);
+      });
+
+      // Karakter sayaçları
+      setupCharCount('title', 'titleCount', 120);
+      setupCharCount('description', 'descCount', 2000);
+
+      // Öncelik seçici
+      document.querySelectorAll('.priority-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+          document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+          opt.classList.add('selected');
+          updatePreview();
+        });
+      });
+
+      // Canlı önizleme
+      document.getElementById('title').addEventListener('input', updatePreview);
+      document.getElementById('description').addEventListener('input', updatePreview);
+      document.getElementById('category').addEventListener('change', updatePreview);
+    });
+
+    function setupCharCount(inputId, countId, max) {
+      const input = document.getElementById(inputId);
+      const counter = document.getElementById(countId);
+      input.addEventListener('input', () => {
+        const len = input.value.length;
+        counter.textContent = `${len} / ${max}`;
+        counter.className = 'char-count';
+        if (len > max * 0.9) counter.classList.add('warning');
+        if (len >= max) counter.classList.add('danger');
+      });
+    }
+
+    function updatePreview() {
+      const title = document.getElementById('title').value;
+      const desc = document.getElementById('description').value;
+      const category = document.getElementById('category').value;
+      const priority = document.querySelector('input[name="priority"]:checked')?.value || 'low';
+
+      document.getElementById('previewTitle').textContent = title || 'Başlık girilmedi...';
+      document.getElementById('previewTitle').style.color = title ? 'var(--gray-900)' : 'var(--gray-400)';
+      document.getElementById('previewDesc').textContent = desc ? (desc.length > 150 ? desc.slice(0, 150) + '...' : desc) : 'Açıklama girilmedi...';
+
+      const priorityEl = document.getElementById('previewPriority');
+      priorityEl.className = `badge ${TicketPriority.badgeClass[priority]}`;
+      priorityEl.textContent = `${TicketPriority.icons[priority]} ${TicketPriority.labels[priority]}`;
+
+      const catEl = document.getElementById('previewCategory');
+      if (category) {
+        catEl.textContent = category;
+        catEl.style.display = 'inline-flex';
+      } else {
+        catEl.style.display = 'none';
+      }
+    }
+
+    // Validasyon şeması
+    const ticketSchema = {
+      title: [
+        { type: 'required', message: 'Konu başlığı zorunludur.' },
+        { type: 'minLength', value: 10, message: 'Başlık en az 10 karakter olmalıdır.' },
+        { type: 'maxLength', value: 120, message: 'Başlık en fazla 120 karakter olabilir.' }
+      ],
+      category: [
+        { type: 'required', message: 'Lütfen bir kategori seçin.' }
+      ],
+      description: [
+        { type: 'required', message: 'Açıklama zorunludur.' },
+        { type: 'minLength', value: 20, message: 'Açıklama en az 20 karakter olmalıdır.' },
+        { type: 'maxLength', value: 2000, message: 'Açıklama en fazla 2000 karakter olabilir.' }
+      ]
+    };
+
+    // Gerçek zamanlı validasyon
+    ['title', 'category', 'description'].forEach(fieldId => {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      el.addEventListener('blur', () => {
+        const error = Validator.validateField(el.value, ticketSchema[fieldId]);
+        if (error) Validator.showFieldError(el, error);
+        else Validator.showFieldSuccess(el);
+      });
+      el.addEventListener('input', () => {
+        if (el.classList.contains('is-invalid')) Validator.clearFieldError(el);
+      });
+    });
+
+    // Form gönderimi
+    document.getElementById('newTicketForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const session = Auth.getSession();
+      const formData = {
+        title: document.getElementById('title').value.trim(),
+        category: document.getElementById('category').value,
+        description: document.getElementById('description').value.trim(),
+        priority: document.querySelector('input[name="priority"]:checked')?.value || 'medium'
+      };
+
+      const { valid, errors } = Validator.validateForm(formData, ticketSchema);
+      if (!valid) {
+        Object.entries(errors).forEach(([field, msg]) => {
+          const el = document.getElementById(field);
+          if (el) Validator.showFieldError(el, msg);
+        });
+        // İlk hataya scroll
+        const firstError = document.querySelector('.is-invalid');
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      document.getElementById('submitBtnText').textContent = 'Gönderiliyor...';
+
+      setTimeout(() => {
+        const ticket = DataStore.Tickets.create({
+          ...formData,
+          userId: session.userId
+        });
+
+        document.getElementById('alertBox').innerHTML = `
+          <div class="alert alert-success">
+            <span class="alert-icon">✅</span>
+            <span>Talebiniz başarıyla oluşturuldu! Talep No: <strong>${ticket.ticketNo}</strong>. Yönlendiriliyorsunuz...</span>
+          </div>
+        `;
+
+        Toast.success(`Talep ${ticket.ticketNo} oluşturuldu!`);
+        setTimeout(() => window.location.href = `ticket-detail.html?id=${ticket.id}`, 1500);
+      }, 700);
+    });
+  </script>
+</body>
+</html>

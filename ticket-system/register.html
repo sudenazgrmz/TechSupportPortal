@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kayıt Ol — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: var(--auth-bg); }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--gray-400);
+      font-size: 1rem;
+      user-select: none;
+    }
+    .password-wrapper { position: relative; }
+    .password-wrapper .form-control { padding-right: 40px; }
+    .strength-bar {
+      height: 4px;
+      border-radius: 4px;
+      background: var(--gray-200);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      width: 0%;
+    }
+    .strength-text {
+      font-size: 0.75rem;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .requirements {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 12px;
+      margin-top: 8px;
+    }
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--gray-500);
+      margin-bottom: 4px;
+    }
+    .req-item:last-child { margin-bottom: 0; }
+    .req-item.met { color: var(--success); }
+    .req-icon { font-size: 0.7rem; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-container" style="max-width:500px;">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <div class="auth-logo-icon">DH</div>
+          <h1 class="auth-title">Hesap Oluştur</h1>
+          <p class="auth-subtitle">DestekHub'a katılın, destek taleplerinizi yönetin</p>
+        </div>
+
+        <div id="alertBox"></div>
+
+        <form id="registerForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="fullName">
+                Ad Soyad <span class="required">*</span>
+              </label>
+              <input type="text" id="fullName" name="fullName" class="form-control"
+                placeholder="Ad Soyad" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="username">
+                Kullanıcı Adı <span class="required">*</span>
+              </label>
+              <input type="text" id="username" name="username" class="form-control"
+                placeholder="kullanici_adi" autocomplete="username">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">
+              E-posta Adresi <span class="required">*</span>
+            </label>
+            <input type="email" id="email" name="email" class="form-control"
+              placeholder="ornek@email.com" autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">
+              Şifre <span class="required">*</span>
+            </label>
+            <div class="password-wrapper">
+              <input type="password" id="password" name="password" class="form-control"
+                placeholder="En az 8 karakter" autocomplete="new-password">
+              <span class="password-toggle" id="togglePassword">GÖSTER</span>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-fill" id="strengthFill"></div>
+            </div>
+            <div class="strength-text" id="strengthText"></div>
+            <div class="requirements" id="passwordReqs">
+              <div class="req-item" id="req-length"><span class="req-icon">○</span> En az 8 karakter</div>
+              <div class="req-item" id="req-upper"><span class="req-icon">○</span> En az bir büyük harf</div>
+              <div class="req-item" id="req-lower"><span class="req-icon">○</span> En az bir küçük harf</div>
+              <div class="req-item" id="req-number"><span class="req-icon">○</span> En az bir rakam</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="confirmPassword">
+              Şifre Tekrar <span class="required">*</span>
+            </label>
+            <div class="password-wrapper">
+              <input type="password" id="confirmPassword" name="confirmPassword" class="form-control"
+                placeholder="Şifrenizi tekrar giriniz" autocomplete="new-password">
+              <span class="password-toggle" id="toggleConfirmPassword">GÖSTER</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.875rem;color:var(--gray-600);">
+              <input type="checkbox" id="terms" style="width:16px;height:16px;accent-color:var(--primary);margin-top:2px;flex-shrink:0;">
+              <span>
+                <a href="#" style="color:var(--primary);font-weight:600;">Kullanım Şartları</a> ve
+                <a href="#" style="color:var(--primary);font-weight:600;">Gizlilik Politikası</a>'nı
+                okudum ve kabul ediyorum. <span class="required">*</span>
+              </span>
+            </label>
+            <div id="termsError" class="form-error" style="display:none;">
+              <span>⚠</span> Devam etmek için şartları kabul etmelisiniz.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 btn-lg" id="registerBtn">
+            <span id="registerBtnText">Hesap Oluştur</span>
+          </button>
+        </form>
+
+        <div class="auth-footer" style="margin-top:20px;">
+          Zaten hesabınız var mı?
+          <a href="login.html" style="font-weight:600;color:var(--primary);">Giriş Yapın</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (Auth.isLoggedIn()) {
+        const s = Auth.getSession();
+        window.location.href = s.role === 'user' ? 'user-dashboard.html' : 'admin-dashboard.html';
+      }
+    });
+
+    // Şifre göster/gizle
+    function setupToggle(btnId, inputId) {
+      document.getElementById(btnId).addEventListener('click', function() {
+        const input = document.getElementById(inputId);
+        input.type = input.type === 'password' ? 'text' : 'password';
+        this.textContent = input.type === 'password' ? 'GÖSTER' : 'GİZLE';
+      });
+    }
+    setupToggle('togglePassword', 'password');
+    setupToggle('toggleConfirmPassword', 'confirmPassword');
+
+    // Şifre gücü kontrolü
+    document.getElementById('password').addEventListener('input', function() {
+      const val = this.value;
+      const checks = {
+        length: val.length >= 8,
+        upper: /[A-Z]/.test(val),
+        lower: /[a-z]/.test(val),
+        number: /[0-9]/.test(val)
+      };
+
+      // Gereksinim göstergelerini güncelle
+      Object.entries(checks).forEach(([key, met]) => {
+        const el = document.getElementById(`req-${key}`);
+        if (el) {
+          el.classList.toggle('met', met);
+          el.querySelector('.req-icon').textContent = met ? '✓' : '○';
+        }
+      });
+
+      // Güç hesapla
+      const score = Object.values(checks).filter(Boolean).length;
+      const fill = document.getElementById('strengthFill');
+      const text = document.getElementById('strengthText');
+      const configs = [
+        { pct: 0, color: '', label: '' },
+        { pct: 25, color: 'var(--danger)', label: 'Çok Zayıf' },
+        { pct: 50, color: 'var(--warning)', label: 'Zayıf' },
+        { pct: 75, color: 'var(--info)', label: 'Orta' },
+        { pct: 100, color: 'var(--success)', label: 'Güçlü' }
+      ];
+      const cfg = configs[score];
+      fill.style.width = cfg.pct + '%';
+      fill.style.background = cfg.color;
+      text.textContent = cfg.label;
+      text.style.color = cfg.color;
+    });
+
+    // Validasyon şeması
+    const registerSchema = {
+      fullName: [
+        { type: 'required', message: 'Ad soyad zorunludur.' },
+        { type: 'minLength', value: 3, message: 'Ad soyad en az 3 karakter olmalıdır.' },
+        { type: 'maxLength', value: 60, message: 'Ad soyad en fazla 60 karakter olabilir.' }
+      ],
+      username: [
+        { type: 'required', message: 'Kullanıcı adı zorunludur.' },
+        { type: 'minLength', value: 3, message: 'Kullanıcı adı en az 3 karakter olmalıdır.' },
+        { type: 'maxLength', value: 30, message: 'Kullanıcı adı en fazla 30 karakter olabilir.' },
+        { type: 'pattern', value: /^[a-zA-Z0-9_]+$/, message: 'Sadece harf, rakam ve alt çizgi kullanılabilir.' }
+      ],
+      email: [
+        { type: 'required', message: 'E-posta adresi zorunludur.' },
+        { type: 'email', message: 'Geçerli bir e-posta adresi giriniz.' }
+      ],
+      password: [
+        { type: 'required', message: 'Şifre zorunludur.' },
+        { type: 'minLength', value: 8, message: 'Şifre en az 8 karakter olmalıdır.' }
+      ],
+      confirmPassword: [
+        { type: 'required', message: 'Şifre tekrarı zorunludur.' }
+      ]
+    };
+
+    // Gerçek zamanlı validasyon
+    ['fullName', 'username', 'email', 'password', 'confirmPassword'].forEach(fieldId => {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      el.addEventListener('blur', () => {
+        let schema = registerSchema[fieldId];
+        if (fieldId === 'confirmPassword') {
+          schema = [
+            ...schema,
+            { type: 'match', value: document.getElementById('password').value, message: 'Şifreler eşleşmiyor.' }
+          ];
+        }
+        const error = Validator.validateField(el.value, schema);
+        if (error) Validator.showFieldError(el, error);
+        else Validator.showFieldSuccess(el);
+      });
+      el.addEventListener('input', () => {
+        if (el.classList.contains('is-invalid')) Validator.clearFieldError(el);
+      });
+    });
+
+    // Form gönderimi
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = {
+        fullName: document.getElementById('fullName').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        confirmPassword: document.getElementById('confirmPassword').value
+      };
+
+      // Şifre eşleşme kontrolü
+      const schema = {
+        ...registerSchema,
+        confirmPassword: [
+          ...registerSchema.confirmPassword,
+          { type: 'match', value: formData.password, message: 'Şifreler eşleşmiyor.' }
+        ]
+      };
+
+      const { valid, errors } = Validator.validateForm(formData, schema);
+
+      // Şartlar checkbox
+      const termsChecked = document.getElementById('terms').checked;
+      const termsError = document.getElementById('termsError');
+
+      if (!valid) {
+        Object.entries(errors).forEach(([field, msg]) => {
+          const el = document.getElementById(field);
+          if (el) Validator.showFieldError(el, msg);
+        });
+      }
+
+      if (!termsChecked) {
+        termsError.style.display = 'flex';
+      } else {
+        termsError.style.display = 'none';
+      }
+
+      if (!valid || !termsChecked) return;
+
+      // Şifre gücü kontrolü
+      const pass = formData.password;
+      if (!/[A-Z]/.test(pass) || !/[a-z]/.test(pass) || !/[0-9]/.test(pass)) {
+        Validator.showFieldError(document.getElementById('password'), 'Şifre büyük harf, küçük harf ve rakam içermelidir.');
+        return;
+      }
+
+      // Benzersizlik kontrolü
+      if (DataStore.Users.getByEmail(formData.email)) {
+        Validator.showFieldError(document.getElementById('email'), 'Bu e-posta adresi zaten kullanılıyor.');
+        return;
+      }
+      if (DataStore.Users.getByUsername(formData.username)) {
+        Validator.showFieldError(document.getElementById('username'), 'Bu kullanıcı adı zaten alınmış.');
+        return;
+      }
+
+      // Loading state
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      document.getElementById('registerBtnText').textContent = 'Hesap oluşturuluyor...';
+
+      setTimeout(() => {
+        const newUser = DataStore.Users.create({
+          fullName: formData.fullName,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: 'user'
+        });
+
+        // Otomatik giriş
+        Auth.login(formData.email, formData.password);
+
+        showAlert('success', `Hesabınız başarıyla oluşturuldu! Hoş geldiniz, ${newUser.fullName}!`);
+        setTimeout(() => window.location.href = 'user-dashboard.html', 1200);
+      }, 700);
+    });
+
+    function showAlert(type, message) {
+      const icons = { success: 'OK', danger: 'ERR' };
+      document.getElementById('alertBox').innerHTML = `
+        <div class="alert alert-${type}">
+          <span class="alert-icon">${icons[type]}</span>
+          <span>${message}</span>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

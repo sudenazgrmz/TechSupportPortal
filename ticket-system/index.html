@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DestekHub — Teknik Destek Yönetim Sistemi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .hero {
+      background: var(--hero-bg);
+      color: var(--hero-text);
+      padding: 80px 24px;
+      text-align: center;
+    }
+    .hero-title {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      opacity: 0.85;
+      margin-bottom: 36px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-btns {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-white {
+      background: var(--white);
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .btn-white:hover {
+      background: var(--gray-100);
+      color: var(--primary-dark);
+    }
+    .btn-outline-white {
+      background: transparent;
+      color: var(--hero-text);
+      border: 2px solid rgba(255,255,255,0.6);
+    }
+    .btn-outline-white:hover {
+      background: rgba(255,255,255,0.15);
+      color: var(--hero-text);
+    }
+    .features {
+      padding: 64px 24px;
+      background: var(--white);
+    }
+    .features-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .section-subtitle {
+      text-align: center;
+      color: var(--gray-500);
+      margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--gray-200);
+      transition: var(--transition);
+    }
+    .feature-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-3px);
+    }
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+    .feature-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      line-height: 1.7;
+    }
+    .roles-section {
+      background: var(--gray-50);
+      padding: 64px 24px;
+    }
+    .roles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .role-card {
+      background: var(--surface-bg);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      text-align: center;
+      border: 1px solid var(--gray-200);
+      box-shadow: var(--shadow);
+    }
+    .role-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .role-title { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+    .role-desc { font-size: 0.82rem; color: var(--gray-600); line-height: 1.6; }
+    .cta-section {
+      background: var(--hero-bg);
+      padding: 64px 24px;
+      text-align: center;
+      color: var(--hero-text);
+    }
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2rem; }
+      .roles-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+    <nav style="background:var(--white);border-bottom:1px solid var(--gray-200);position:sticky;top:0;z-index:1000;">
+    <div style="max-width:1280px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:64px;">
+      <a href="index.html" style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.2rem;color:var(--dark);text-decoration:none;">
+        <div style="width:36px;height:36px;background:var(--primary);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:var(--white);font-size:0.78rem;font-weight:800;">DH</div>
+        Destek<span style="color:var(--primary);">Hub</span>
+      </a>
+      <div style="display:flex;gap:10px;">
+        <button type="button" id="themeToggleBtn" class="btn btn-secondary theme-toggle" onclick="ThemeManager.toggleTheme()"></button>
+        <a href="login.html" class="btn btn-secondary">Giriş Yap</a>
+        <a href="register.html" class="btn btn-primary">Kayıt Ol</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div style="max-width:800px;margin:0 auto;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);padding:6px 16px;border-radius:20px;font-size:0.85rem;margin-bottom:20px;">
+        Teknik Destek Yönetim Sistemi v1.0
+      </div>
+      <h1 class="hero-title">Destek Taleplerinizi<br>Kolayca Yönetin</h1>
+      <p class="hero-subtitle">
+        DestekHub ile müşteri destek taleplerini oluşturun, takip edin ve çözüme kavuşturun.
+        Admin, Destek Ekibi ve Kullanıcı rolleriyle tam kapsamlı yönetim.
+      </p>
+      <div class="hero-btns">
+        <a href="register.html" class="btn btn-white btn-lg">Hemen Başla</a>
+        <a href="login.html" class="btn btn-outline-white btn-lg">Giriş Yap</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Özellikler -->
+  <section class="features">
+    <div class="features-inner">
+      <h2 class="section-title">Tüm İhtiyaçlarınız Tek Yerde</h2>
+      <p class="section-subtitle">Teknik destek süreçlerinizi baştan sona yönetin</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">TL</div>
+          <div class="feature-title">Ticket Yönetimi</div>
+          <div class="feature-desc">Destek taleplerini oluşturun, kategorize edin ve önceliklendirin. Açık, İşlemde, Çözüldü, Kapandı durum takibi.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">RB</div>
+          <div class="feature-title">Rol Tabanlı Yetkilendirme</div>
+          <div class="feature-desc">Admin, Destek Ekibi ve Kullanıcı rolleri ile güvenli erişim kontrolü. Her rol için özelleştirilmiş arayüz.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">IM</div>
+          <div class="feature-title">Gerçek Zamanlı İletişim</div>
+          <div class="feature-desc">Ticket üzerinden yorum ve yanıt sistemi. Destek ekibi ile müşteri arasında şeffaf iletişim.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">RP</div>
+          <div class="feature-title">Detaylı Raporlama</div>
+          <div class="feature-desc">Durum dağılımı, kategori analizi, öncelik grafikleri. CSV export ile veri aktarımı.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">AR</div>
+          <div class="feature-title">Gelişmiş Filtreleme</div>
+          <div class="feature-desc">Durum, öncelik, kategori ve metin araması ile istediğiniz talebi anında bulun.</div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">VL</div>
+          <div class="feature-title">Form Validasyonu</div>
+          <div class="feature-desc">Gerçek zamanlı form doğrulama, şifre güç göstergesi ve kapsamlı hata mesajları.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roller -->
+  <section class="roles-section">
+    <div style="max-width:1100px;margin:0 auto;">
+      <h2 class="section-title">Üç Farklı Kullanıcı Rolü</h2>
+      <p class="section-subtitle">Her rol için özelleştirilmiş deneyim</p>
+      <div class="roles-grid">
+        <div class="role-card">
+          <div class="role-icon">AD</div>
+          <div class="role-title" style="color:var(--warning);">Yönetici (Admin)</div>
+          <div class="role-desc">Tüm sistemi yönetir. Kullanıcı ekleme/silme, tüm talepleri görme, istatistik paneli.</div>
+          <div style="margin-top:16px;">
+            <button onclick="demoLogin('admin@destek.com','Admin123!')" class="btn btn-warning btn-sm w-100">Demo Giriş</button>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">DE</div>
+          <div class="role-title" style="color:var(--success);">Destek Ekibi</div>
+          <div class="role-desc">Talepleri üstlenir, yanıt yazar, durum günceller. Atanmamış talepleri görür.</div>
+          <div style="margin-top:16px;">
+            <button onclick="demoLogin('destek@destek.com','Support123!')" class="btn btn-success btn-sm w-100">Demo Giriş</button>
+          </div>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">KU</div>
+          <div class="role-title" style="color:var(--primary);">Kullanıcı</div>
+          <div class="role-desc">Destek talebi oluşturur, kendi taleplerini takip eder, yorum ekler.</div>
+          <div style="margin-top:16px;">
+            <button onclick="demoLogin('kullanici@ornek.com','User123!')" class="btn btn-primary btn-sm w-100">Demo Giriş</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 style="font-size:2rem;font-weight:800;margin-bottom:12px;">Hemen Başlayın</h2>
+    <p style="opacity:0.85;margin-bottom:28px;font-size:1.05rem;">Ücretsiz hesap oluşturun, destek taleplerinizi yönetmeye başlayın.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="register.html" class="btn btn-white btn-lg">Ücretsiz Kayıt Ol</a>
+      <a href="login.html" class="btn btn-outline-white btn-lg">Giriş Yap</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+          <div class="footer-brand">
+      <span>DH</span>
+        <span>DestekHub</span>
+      </div>
+      <div class="footer-links">
+        <a href="#">Gizlilik</a>
+        <a href="#">Kullanım Şartları</a>
+        <a href="#">Yardım</a>
+      </div>
+      <div class="footer-copy">© 2024 DestekHub. Tüm hakları saklıdır.</div>
+    </div>
+  </footer>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      DataStore.initDB();
+      // Zaten giriş yapmışsa yönlendir
+      if (Auth.isLoggedIn()) {
+        const s = Auth.getSession();
+        window.location.href = s.role === 'user' ? 'user-dashboard.html' : 'admin-dashboard.html';
+      }
+    });
+
+    function demoLogin(email, pass) {
+      const result = Auth.login(email, pass);
+      if (result.success) {
+        Toast.success(`${result.user.fullName} olarak giriş yapılıyor...`);
+        setTimeout(() => {
+          window.location.href = result.user.role === 'user' ? 'user-dashboard.html' : 'admin-dashboard.html';
+        }, 800);
+      }
+    }
+  </script>
+</body>
+</html>

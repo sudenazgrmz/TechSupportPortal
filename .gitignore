@@ -1,0 +1,3 @@
+backend/bin/
+backend/obj/
+ticket-system/data/db.runtime.json

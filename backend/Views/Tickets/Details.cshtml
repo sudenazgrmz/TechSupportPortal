@@ -1,0 +1,82 @@
+@model TicketDetailsViewModel
+@{
+    ViewData["Title"] = Model.Ticket.TicketNo;
+}
+
+<div class="ticket-detail-header">
+    <div>
+        <h1 class="ticket-detail-title">@Model.Ticket.Title</h1>
+        <div class="ticket-detail-meta">
+            <span class="badge badge-category">@Model.Ticket.Category</span>
+            <span class="badge badge-@Model.Ticket.Status">
+                <span class="badge-dot"></span>
+                @Model.Ticket.Status
+            </span>
+            <span class="badge badge-@Model.Ticket.Priority">@Model.Ticket.Priority</span>
+        </div>
+    </div>
+    <a class="btn btn-secondary" href="/dashboard">Panele Dön</a>
+</div>
+
+<div class="detail-grid">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Açıklama</h2>
+        </div>
+        <div class="card-body">
+            <p style="white-space: pre-wrap; line-height: 1.8;">@Model.Ticket.Description</p>
+        </div>
+
+        <div class="card-header">
+            <h2 class="card-title">Yorumlar</h2>
+        </div>
+        <div class="card-body">
+            @if (Model.Comments.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-state-title">Henüz yorum yok</div>
+                </div>
+            }
+            else
+            {
+                <div class="comment-thread">
+                    @foreach (var comment in Model.Comments)
+                    {
+                        <div class="comment">
+                            <div class="comment-avatar user-comment">@comment.AuthorName.Substring(0, Math.Min(2, comment.AuthorName.Length)).ToUpperInvariant()</div>
+                            <div class="comment-bubble">
+                                <div class="comment-header">
+                                    <div class="comment-author">@comment.AuthorName</div>
+                                    <div class="comment-time">@comment.CreatedAt.ToString("dd.MM.yyyy HH:mm")</div>
+                                </div>
+                                <div class="comment-text">@comment.Text</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Detaylar</h2>
+        </div>
+        <div class="card-body">
+            <div class="info-list">
+                <div class="info-item"><span class="info-key">Talep No</span><span class="info-value">@Model.Ticket.TicketNo</span></div>
+                <div class="info-item"><span class="info-key">Sahip</span><span class="info-value">@Model.Ticket.UserName</span></div>
+                <div class="info-item"><span class="info-key">Atanan</span><span class="info-value">@(Model.Ticket.AssignedToName ?? "-")</span></div>
+                <div class="info-item"><span class="info-key">Yorum</span><span class="info-value">@Model.Ticket.CommentCount</span></div>
+                <div class="info-item"><span class="info-key">Güncelleme</span><span class="info-value">@Model.Ticket.UpdatedAt.ToString("dd.MM.yyyy HH:mm")</span></div>
+            </div>
+
+            @if (Model.CanEdit)
+            {
+                <div class="alert alert-info mt-3">
+                    Bu kayıt MVC tarafında düzenlemeye açık olarak işaretlendi.
+                </div>
+            }
+        </div>
+    </div>
+</div>

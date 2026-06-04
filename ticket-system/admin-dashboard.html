@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Paneli — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .donut-chart {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto;
+    }
+    .donut-chart svg { transform: rotate(-90deg); }
+    .donut-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .donut-center .value { font-size: 1.6rem; font-weight: 800; color: var(--gray-900); }
+    .donut-center .label { font-size: 0.7rem; color: var(--gray-500); font-weight: 600; }
+    .chart-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-item { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 0.78rem; color: var(--gray-600); width: 70px; flex-shrink: 0; }
+    .bar-track { flex: 1; background: var(--gray-100); border-radius: 20px; height: 10px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 20px; transition: width 0.8s ease; }
+    .bar-value { font-size: 0.78rem; font-weight: 700; color: var(--gray-700); width: 24px; text-align: right; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <!-- İçerik -->
+    <main class="admin-content">
+      <div class="page-header">
+        <h1 class="page-title">Yönetim Paneli</h1>
+        <p class="page-subtitle" id="welcomeText"></p>
+      </div>
+
+      <div id="dashboardContent"></div>
+    </main>
+  </div>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['admin', 'support'], 'user-dashboard.html')) return;
+
+      const session = Auth.getSession();
+      document.getElementById('welcomeText').textContent =
+        `Hoş geldiniz, ${session.fullName}. Bugün ${new Date().toLocaleDateString('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' })}.`;
+
+      renderSidebar();
+      renderDashboard();
+    });
+
+    function renderSidebar() {
+      const session = Auth.getSession();
+      const isAdmin = session.role === 'admin';
+      document.getElementById('sidebar').innerHTML = `
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Ana Menü</div>
+          <a href="admin-dashboard.html" class="sidebar-link active">
+            <span class="link-icon"></span> Dashboard
+          </a>
+          <a href="admin-tickets.html" class="sidebar-link">
+            <span class="link-icon"></span> Tüm Talepler
+            <span class="link-badge" id="openBadge">...</span>
+          </a>
+          ${isAdmin ? `
+            <a href="admin-users.html" class="sidebar-link">
+              <span class="link-icon"></span> Kullanıcılar
+            </a>
+          ` : ''}
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Filtreler</div>
+          <a href="admin-tickets.html?status=open" class="sidebar-link">
+            <span class="link-icon"></span> Açık Talepler
+          </a>
+          <a href="admin-tickets.html?status=in-progress" class="sidebar-link">
+            <span class="link-icon"></span> İşlemdekiler
+          </a>
+          <a href="admin-tickets.html?status=resolved" class="sidebar-link">
+            <span class="link-icon"></span> Çözülenler
+          </a>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Hesap</div>
+          <a href="profile.html" class="sidebar-link">
+            <span class="link-icon"></span> Profilim
+          </a>
+          <button class="sidebar-link" style="border:none;background:none;width:100%;text-align:left;cursor:pointer;color:var(--danger);" onclick="NavbarComponent.handleLogout()">
+            <span class="link-icon"></span> Çıkış Yap
+          </button>
+        </div>
+      `;
+    }
+
+    function renderDashboard() {
+      const stats = DataStore.Tickets.getStats();
+      const allTickets = DataStore.Tickets.getAll();
+      const allUsers = DataStore.Users.getAll();
+      const recentTickets = allTickets.sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0, 6);
+
+      // Açık badge güncelle
+      const badge = document.getElementById('openBadge');
+      if (badge) badge.textContent = stats.open;
+
+      // Kategori dağılımı
+      const catCounts = {};
+      allTickets.forEach(t => { catCounts[t.category] = (catCounts[t.category] || 0) + 1; });
+      const catEntries = Object.entries(catCounts).sort((a,b) => b[1]-a[1]);
+      const maxCat = catEntries[0]?.[1] || 1;
+
+      // Donut chart SVG
+      const total = stats.total || 1;
+      const donutData = [
+        { label: 'Açık', value: stats.open, color: '#1d4ed8' },
+        { label: 'İşlemde', value: stats.inProgress, color: '#b45309' },
+        { label: 'Çözüldü', value: stats.resolved, color: '#0f766e' },
+        { label: 'Kapandı', value: stats.closed, color: '#64748b' }
+      ];
+      const r = 50, cx = 60, cy = 60, circ = 2 * Math.PI * r;
+      let offset = 0;
+      const donutSegments = donutData.map(d => {
+        const pct = d.value / total;
+        const dash = pct * circ;
+        const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${d.color}" stroke-width="18" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" />`;
+        offset += dash;
+        return seg;
+      }).join('');
+
+      // Son aktiviteler
+      const activities = recentTickets.slice(0, 5).map(t => {
+        const user = DataStore.Users.getById(t.userId);
+        return `
+            <div class="activity-item">
+            <div class="activity-icon" style="background:${t.status==='open'?'var(--primary-light)':t.status==='in-progress'?'var(--warning-light)':t.status==='resolved'?'var(--success-light)':'var(--gray-100)'};">
+              ${t.status==='open'?'AC':t.status==='in-progress'?'IP':t.status==='resolved'?'OK':'KP'}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:0.875rem;font-weight:600;color:var(--gray-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                <a href="ticket-detail.html?id=${t.id}" style="color:inherit;">${Utils.escapeHtml(t.title)}</a>
+              </div>
+              <div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;">
+                ${Utils.escapeHtml(user?.fullName || '?')} · ${Utils.timeAgo(t.createdAt)}
+              </div>
+            </div>
+            <span class="badge ${TicketStatus.badgeClass[t.status]}" style="flex-shrink:0;">
+              <span class="badge-dot"></span>${TicketStatus.labels[t.status]}
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      document.getElementById('dashboardContent').innerHTML = `
+        <!-- İstatistik Kartları -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">TP</div>
+            <div class="stat-info">
+              <div class="stat-value">${stats.total}</div>
+              <div class="stat-label">Toplam Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon yellow">AC</div>
+            <div class="stat-info">
+              <div class="stat-value">${stats.open}</div>
+              <div class="stat-label">Açık Talep</div>
+              ${stats.unassigned > 0 ? `<div class="stat-change down">⚠ ${stats.unassigned} atanmamış</div>` : ''}
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">IP</div>
+            <div class="stat-info">
+              <div class="stat-value">${stats.inProgress}</div>
+              <div class="stat-label">İşlemdeki Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">OK</div>
+            <div class="stat-info">
+              <div class="stat-value">${stats.resolved + stats.closed}</div>
+              <div class="stat-label">Çözülen Talep</div>
+              <div class="stat-change up">↑ ${total > 0 ? Math.round((stats.resolved+stats.closed)/total*100) : 0}% çözüm oranı</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">KT</div>
+            <div class="stat-info">
+              <div class="stat-value">${stats.critical}</div>
+              <div class="stat-label">Kritik Talep</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">KU</div>
+            <div class="stat-info">
+              <div class="stat-value">${allUsers.filter(u=>u.role==='user').length}</div>
+              <div class="stat-label">Kayıtlı Kullanıcı</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px;">
+          <!-- Durum Dağılımı -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Durum Dağılımı</h3>
+            </div>
+            <div class="card-body">
+              <div class="donut-chart">
+                <svg viewBox="0 0 120 120" width="140" height="140">
+                  <circle cx="60" cy="60" r="50" fill="none" stroke="var(--gray-100)" stroke-width="18"/>
+                  ${donutSegments}
+                </svg>
+                <div class="donut-center">
+                  <div class="value">${stats.total}</div>
+                  <div class="label">TOPLAM</div>
+                </div>
+              </div>
+              <div class="chart-legend">
+                ${donutData.map(d => `
+                  <div class="legend-item">
+                    <span><span class="legend-dot" style="background:${d.color};"></span>${d.label}</span>
+                    <span style="font-weight:700;">${d.value} <span style="color:var(--gray-400);font-weight:400;">(${total>0?Math.round(d.value/total*100):0}%)</span></span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategori Dağılımı -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Kategoriler</h3>
+            </div>
+            <div class="card-body">
+              <div class="bar-chart">
+                ${catEntries.length === 0 ? '<div style="color:var(--gray-400);text-align:center;padding:20px;">Veri yok</div>' :
+                  catEntries.map(([cat, count], i) => {
+                    const colors = ['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2'];
+                    return `
+                      <div class="bar-item">
+                        <span class="bar-label">${cat}</span>
+                        <div class="bar-track">
+                          <div class="bar-fill" style="width:${Math.round(count/maxCat*100)}%;background:${colors[i%colors.length]};"></div>
+                        </div>
+                        <span class="bar-value">${count}</span>
+                      </div>
+                    `;
+                  }).join('')
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Öncelik Dağılımı -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Öncelik Dağılımı</h3>
+            </div>
+            <div class="card-body">
+              ${['critical','high','medium','low'].map(p => {
+                const count = allTickets.filter(t=>t.priority===p).length;
+                const pct = total > 0 ? Math.round(count/total*100) : 0;
+                const colors = { critical:'#dc2626', high:'#d97706', medium:'#0891b2', low:'#16a34a' };
+                return `
+                  <div style="margin-bottom:14px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                      <span style="font-size:0.82rem;font-weight:600;">${TicketPriority.icons[p]} ${TicketPriority.labels[p]}</span>
+                      <span style="font-size:0.82rem;color:var(--gray-500);">${count} (${pct}%)</span>
+                    </div>
+                    <div class="progress-bar-wrapper">
+                      <div class="progress-bar" style="width:${pct}%;background:${colors[p]};"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;">
+          <!-- Son Aktiviteler -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Son Talepler</h3>
+              <a href="admin-tickets.html" class="btn btn-secondary btn-sm">Tümünü Gör</a>
+            </div>
+            <div class="card-body">
+              ${activities || '<div style="color:var(--gray-400);text-align:center;padding:20px;">Talep yok</div>'}
+            </div>
+          </div>
+
+          <!-- Atanmamış Talepler -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Atanmamış</h3>
+              <span class="badge badge-open">${stats.unassigned}</span>
+            </div>
+            <div class="card-body" style="padding:0;">
+              ${DataStore.Tickets.filter({ status: 'open' }).filter(t=>!t.assignedTo).slice(0,5).map(t => `
+                <div style="padding:12px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                  <div style="min-width:0;">
+                    <div style="font-size:0.82rem;font-weight:600;color:var(--gray-900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                      ${Utils.escapeHtml(t.title)}
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--gray-400);">${t.ticketNo} · ${Utils.timeAgo(t.createdAt)}</div>
+                  </div>
+                  <a href="ticket-detail.html?id=${t.id}" class="btn btn-outline btn-sm" style="flex-shrink:0;">Üstlen</a>
+                </div>
+              `).join('') || '<div style="padding:20px;text-align:center;color:var(--gray-400);">Tüm talepler atanmış!</div>'}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

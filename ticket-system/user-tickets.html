@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taleplerim — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <main class="main-content">
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 class="page-title">🎫 Taleplerim</h1>
+        <p class="page-subtitle">Tüm destek taleplerinizi görüntüleyin ve yönetin.</p>
+      </div>
+      <a href="new-ticket.html" class="btn btn-primary">
+        <span>➕</span> Yeni Talep
+      </a>
+    </div>
+
+    <!-- Filtre Çubuğu -->
+    <div class="filter-bar">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Talep ara... (başlık, numara)">
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Durum:</span>
+        <select class="filter-select" id="statusFilter">
+          <option value="all">Tümü</option>
+          <option value="open">Açık</option>
+          <option value="in-progress">İşlemde</option>
+          <option value="resolved">Çözüldü</option>
+          <option value="closed">Kapandı</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Öncelik:</span>
+        <select class="filter-select" id="priorityFilter">
+          <option value="all">Tümü</option>
+          <option value="critical">Kritik</option>
+          <option value="high">Yüksek</option>
+          <option value="medium">Orta</option>
+          <option value="low">Düşük</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Kategori:</span>
+        <select class="filter-select" id="categoryFilter">
+          <option value="all">Tümü</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="resetFilters()">↺ Sıfırla</button>
+    </div>
+
+    <!-- Sonuç Sayısı -->
+    <div style="margin-bottom:12px;font-size:0.875rem;color:var(--gray-500);" id="resultCount"></div>
+
+    <!-- Ticket Listesi -->
+    <div id="ticketList"></div>
+
+    <!-- Pagination -->
+    <div id="pagination"></div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <script src="js/app.js"></script>
+  <script>
+    const PAGE_SIZE = 8;
+    let currentPage = 1;
+    let session;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      if (!Auth.requireRole(['user'], 'admin-dashboard.html')) return;
+
+      session = Auth.getSession();
+
+      // Kategorileri doldur
+      const cats = DataStore.Categories.getAll();
+      const catFilter = document.getElementById('categoryFilter');
+      cats.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        catFilter.appendChild(opt);
+      });
+
+      renderTickets();
+      setupFilters();
+    });
+
+    function getFilters() {
+      return {
+        search: document.getElementById('searchInput').value,
+        status: document.getElementById('statusFilter').value,
+        priority: document.getElementById('priorityFilter').value,
+        category: document.getElementById('categoryFilter').value,
+        userId: session.userId
+      };
+    }
+
+    function renderTickets() {
+      const filters = getFilters();
+      // LINQ benzeri filtreleme
+      const tickets = DataStore.Tickets.filter(filters);
+      const total = tickets.length;
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const paged = tickets.slice(start, start + PAGE_SIZE);
+
+      document.getElementById('resultCount').textContent =
+        total === 0 ? 'Sonuç bulunamadı.' : `${total} talep bulundu`;
+
+      const listEl = document.getElementById('ticketList');
+
+      if (paged.length === 0) {
+        listEl.innerHTML = `
+          <div class="empty-state card">
+            <div class="empty-state-icon">🔍</div>
+            <div class="empty-state-title">Talep bulunamadı</div>
+            <div class="empty-state-text">Arama kriterlerinizi değiştirin veya yeni bir talep oluşturun.</div>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+              <button class="btn btn-secondary" onclick="resetFilters()">Filtreleri Temizle</button>
+              <a href="new-ticket.html" class="btn btn-primary">Yeni Talep</a>
+            </div>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = `<div class="ticket-list">${paged.map(renderTicketCard).join('')}</div>`;
+      }
+
+      renderPagination(total);
+    }
+
+    function renderTicketCard(t) {
+      const commentCount = t.comments ? t.comments.length : 0;
+      return `
+        <a href="ticket-detail.html?id=${t.id}" class="ticket-card priority-${t.priority}">
+          <div>
+            <div class="ticket-id">${t.ticketNo}</div>
+          </div>
+          <div class="ticket-content">
+            <div class="ticket-title">${Utils.escapeHtml(t.title)}</div>
+            <div class="ticket-badges">
+              <span class="badge ${TicketStatus.badgeClass[t.status]}">
+                <span class="badge-dot"></span>
+                ${TicketStatus.labels[t.status]}
+              </span>
+              <span class="badge ${TicketPriority.badgeClass[t.priority]}">
+                ${TicketPriority.icons[t.priority]} ${TicketPriority.labels[t.priority]}
+              </span>
+              <span class="badge badge-category">${t.category}</span>
+            </div>
+            <div class="ticket-meta" style="margin-top:8px;">
+              <span class="ticket-meta-item">📅 ${Utils.formatDate(t.createdAt)}</span>
+              <span class="ticket-meta-item">💬 ${commentCount} yorum</span>
+              ${t.assignedTo ? `<span class="ticket-meta-item">👤 Atandı</span>` : `<span class="ticket-meta-item" style="color:var(--warning);">⏳ Bekliyor</span>`}
+            </div>
+          </div>
+          <span class="ticket-arrow">›</span>
+        </a>
+      `;
+    }
+
+    function renderPagination(total) {
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      const el = document.getElementById('pagination');
+      if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+      let html = '<div class="pagination">';
+      html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+      html += '</div>';
+      el.innerHTML = html;
+    }
+
+    function goPage(p) {
+      const total = DataStore.Tickets.filter({ ...getFilters() }).length;
+      const totalPages = Math.ceil(total / PAGE_SIZE);
+      if (p < 1 || p > totalPages) return;
+      currentPage = p;
+      renderTickets();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setupFilters() {
+      ['searchInput', 'statusFilter', 'priorityFilter', 'categoryFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', () => { currentPage = 1; renderTickets(); });
+        el.addEventListener('change', () => { currentPage = 1; renderTickets(); });
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('statusFilter').value = 'all';
+      document.getElementById('priorityFilter').value = 'all';
+      document.getElementById('categoryFilter').value = 'all';
+      currentPage = 1;
+      renderTickets();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+@model LoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Giriş Yap";
+}
+
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DestekHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #0f766e 100%); }
+        .auth-card { width: 100%; }
+        .auth-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+    </style>
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card auth-container">
+            <div class="auth-logo">
+                <div class="auth-logo-icon">DH</div>
+                <h1 class="auth-title">Giriş Yap</h1>
+                <p class="auth-subtitle">MVC login sayfası</p>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <form method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="form-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" type="password" />
+                    <span asp-validation-for="Password" class="form-error"></span>
+                </div>
+                <div class="form-group">
+                    <label class="d-flex align-center gap-2">
+                        <input asp-for="RememberMe" />
+                        <span>Beni hatırla</span>
+                    </label>
+                </div>
+                <button class="btn btn-primary w-100" type="submit">Giriş Yap</button>
+            </form>
+
+            <div class="auth-footer">
+                Hesabınız yok mu? <a href="/account/register">Kayıt olun</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

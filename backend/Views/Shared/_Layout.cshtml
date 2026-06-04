@@ -1,0 +1,140 @@
+@using System.Security.Claims
+<!DOCTYPE html>
+<html lang="tr" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DestekHub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css" />
+    <script>
+        (function () {
+            try {
+                var theme = localStorage.getItem('ticketSystemTheme');
+                var next = theme === 'dark' || theme === 'light' ? theme : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+            } catch (e) {}
+        })();
+    </script>
+    <style>
+        .mvc-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--gray-50);
+        }
+
+        .mvc-brand-mark {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius);
+            background: var(--primary);
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .mvc-navbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mvc-footer {
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body class="mvc-shell">
+    <header class="navbar">
+        <div class="navbar-inner">
+            <a class="navbar-brand" href="/index.html" aria-label="DestekHub">
+                <span class="mvc-brand-mark">DH</span>
+                Destek<span>Hub</span>
+            </a>
+
+            <nav class="navbar-nav">
+                <a class="nav-link" href="/dashboard">MVC Panel</a>
+                <a class="nav-link" href="/dashboard">Panel</a>
+                <a class="nav-link" href="/account/login">Giriş</a>
+            </nav>
+
+            <div class="mvc-navbar-actions">
+                <button type="button" class="theme-toggle" id="themeToggleBtn">Koyu Mod</button>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="navbar-user">
+                        <div class="user-info">
+                            <div class="user-name">@User.Identity?.Name</div>
+                            <div class="user-role">@User.FindFirstValue(ClaimTypes.Role)</div>
+                        </div>
+                        <form method="post" action="/account/logout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-secondary btn-sm">Çıkış</button>
+                        </form>
+                    </div>
+                }
+                else
+                {
+                    <a class="btn btn-secondary btn-sm" href="/account/login">Giriş Yap</a>
+                    <a class="btn btn-primary btn-sm" href="/account/register">Kayıt Ol</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        @RenderBody()
+    </main>
+
+    <footer class="footer mvc-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span>DH</span>
+                <span>DestekHub</span>
+            </div>
+            <div class="footer-links">
+                <a href="/index.html">Ana Sayfa</a>
+                <a href="/dashboard">Panel</a>
+                <a href="/account/login">Giriş</a>
+            </div>
+            <div class="footer-copy">© 2026 DestekHub. MVC katmanı.</div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var button = document.getElementById('themeToggleBtn');
+            if (!button) return;
+
+            function getTheme() {
+                try {
+                    var stored = localStorage.getItem('ticketSystemTheme');
+                    return stored === 'dark' || stored === 'light' ? stored : 'light';
+                } catch (e) {
+                    return 'light';
+                }
+            }
+
+            function setTheme(theme) {
+                var next = theme === 'dark' ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', next);
+                try { localStorage.setItem('ticketSystemTheme', next); } catch (e) {}
+                button.textContent = next === 'dark' ? 'Açık Mod' : 'Koyu Mod';
+            }
+
+            button.addEventListener('click', function () {
+                setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+            });
+
+            setTheme(getTheme());
+        })();
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

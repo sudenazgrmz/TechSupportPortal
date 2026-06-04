@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş Yap — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: var(--auth-bg); }
+    .demo-accounts {
+      background: var(--auth-glass-bg);
+      border: 1px solid var(--auth-glass-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-top: 20px;
+      backdrop-filter: blur(10px);
+    }
+    .demo-accounts h4 {
+      color: var(--auth-text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .demo-account-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--auth-glass-bg);
+      border-radius: var(--radius);
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .demo-account-item:hover { background: var(--auth-glass-hover); }
+    .demo-account-item:last-child { margin-bottom: 0; }
+    .demo-account-info { color: var(--auth-text); }
+    .demo-account-name { font-size: 0.85rem; font-weight: 600; }
+    .demo-account-cred { font-size: 0.75rem; color: var(--auth-muted); }
+    .demo-account-role { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+    .demo-role-admin { background: var(--warning-light); color: var(--warning); }
+    .demo-role-support { background: var(--success-light); color: var(--success); }
+    .demo-role-user { background: var(--primary-light); color: var(--primary); }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--gray-400);
+      font-size: 1rem;
+      user-select: none;
+    }
+    .password-wrapper { position: relative; }
+    .password-wrapper .form-control { padding-right: 40px; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <div class="auth-logo-icon">DH</div>
+          <h1 class="auth-title">DestekHub</h1>
+          <p class="auth-subtitle">Teknik Destek Yönetim Sistemi</p>
+        </div>
+
+        <div id="alertBox"></div>
+
+        <form id="loginForm" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="email">
+              E-posta Adresi <span class="required">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              placeholder="ornek@email.com"
+              autocomplete="email"
+            >
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="password">
+              Şifre <span class="required">*</span>
+            </label>
+            <div class="password-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                class="form-control"
+                placeholder="Şifrenizi giriniz"
+                autocomplete="current-password"
+              >
+              <span class="password-toggle" id="togglePassword">GÖSTER</span>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.875rem;color:var(--gray-600);">
+              <input type="checkbox" id="rememberMe" style="width:16px;height:16px;accent-color:var(--primary);">
+              Beni hatırla
+            </label>
+            <a href="#" style="font-size:0.875rem;color:var(--primary);">Şifremi unuttum</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 btn-lg" id="loginBtn">
+            <span id="loginBtnText">Giriş Yap</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">veya</div>
+
+        <div class="auth-footer">
+          Hesabınız yok mu?
+          <a href="register.html" style="font-weight:600;color:var(--primary);">Kayıt Olun</a>
+        </div>
+      </div>
+
+      <!-- Demo Hesaplar -->
+      <div class="demo-accounts">
+        <h4>🔑 Demo Hesaplar (Tıklayarak Giriş Yapın)</h4>
+        <div class="demo-account-item" onclick="fillDemo('admin@destek.com','Admin123!')">
+          <div class="demo-account-info">
+            <div class="demo-account-name">Sistem Yöneticisi</div>
+            <div class="demo-account-cred">admin@destek.com / Admin123!</div>
+          </div>
+          <span class="demo-account-role demo-role-admin">Admin</span>
+        </div>
+        <div class="demo-account-item" onclick="fillDemo('destek@destek.com','Support123!')">
+          <div class="demo-account-info">
+            <div class="demo-account-name">Ahmet Yılmaz</div>
+            <div class="demo-account-cred">destek@destek.com / Support123!</div>
+          </div>
+          <span class="demo-account-role demo-role-support">Destek</span>
+        </div>
+        <div class="demo-account-item" onclick="fillDemo('kullanici@ornek.com','User123!')">
+          <div class="demo-account-info">
+            <div class="demo-account-name">Mehmet Kaya</div>
+            <div class="demo-account-cred">kullanici@ornek.com / User123!</div>
+          </div>
+          <span class="demo-account-role demo-role-user">Kullanıcı</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Zaten giriş yapmışsa yönlendir
+    document.addEventListener('DOMContentLoaded', () => {
+      if (Auth.isLoggedIn()) {
+        const session = Auth.getSession();
+        redirectByRole(session.role);
+      }
+    });
+
+    function redirectByRole(role) {
+      if (role === 'admin' || role === 'support') {
+        window.location.href = 'admin-dashboard.html';
+      } else {
+        window.location.href = 'user-dashboard.html';
+      }
+    }
+
+    // Şifre göster/gizle
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const input = document.getElementById('password');
+      if (input.type === 'password') {
+        input.type = 'text';
+        this.textContent = 'GİZLE';
+      } else {
+        input.type = 'password';
+        this.textContent = 'GÖSTER';
+      }
+    });
+
+    // Demo hesap doldur
+    function fillDemo(email, pass) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = pass;
+      Validator.clearFormErrors(document.getElementById('loginForm'));
+    }
+
+    // Login formu validasyon şeması
+    const loginSchema = {
+      email: [
+        { type: 'required', message: 'E-posta adresi zorunludur.' },
+        { type: 'email', message: 'Geçerli bir e-posta adresi giriniz.' }
+      ],
+      password: [
+        { type: 'required', message: 'Şifre zorunludur.' },
+        { type: 'minLength', value: 6, message: 'Şifre en az 6 karakter olmalıdır.' }
+      ]
+    };
+
+    // Gerçek zamanlı validasyon
+    ['email', 'password'].forEach(fieldId => {
+      const el = document.getElementById(fieldId);
+      el.addEventListener('blur', () => {
+        const error = Validator.validateField(el.value, loginSchema[fieldId]);
+        if (error) Validator.showFieldError(el, error);
+        else Validator.showFieldSuccess(el);
+      });
+      el.addEventListener('input', () => {
+        if (el.classList.contains('is-invalid')) {
+          Validator.clearFieldError(el);
+        }
+      });
+    });
+
+    // Form gönderimi
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const formData = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      };
+
+      // Validasyon
+      const { valid, errors } = Validator.validateForm(formData, loginSchema);
+      if (!valid) {
+        Object.entries(errors).forEach(([field, msg]) => {
+          Validator.showFieldError(document.getElementById(field), msg);
+        });
+        return;
+      }
+
+      // Giriş butonu loading state
+      const btn = document.getElementById('loginBtn');
+      const btnText = document.getElementById('loginBtnText');
+      btn.disabled = true;
+      btnText.textContent = 'Giriş yapılıyor...';
+
+      // Auth işlemi
+      setTimeout(() => {
+        const result = Auth.login(formData.email, formData.password);
+
+        if (result.success) {
+          showAlert('success', `Hoş geldiniz, ${result.user.fullName}! Yönlendiriliyorsunuz...`);
+          setTimeout(() => redirectByRole(result.user.role), 1000);
+        } else {
+          showAlert('danger', result.message);
+          btn.disabled = false;
+          btnText.textContent = 'Giriş Yap';
+          Validator.showFieldError(document.getElementById('password'), result.message);
+        }
+      }, 600);
+    });
+
+    function showAlert(type, message) {
+      const icons = { success: 'OK', danger: 'ERR', warning: 'UYARI', info: 'BI' };
+      document.getElementById('alertBox').innerHTML = `
+        <div class="alert alert-${type}">
+          <span class="alert-icon">${icons[type]}</span>
+          <span>${message}</span>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Talep Detayı — DestekHub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .status-timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 16px 0;
+    }
+    .timeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+    .timeline-step::before {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      right: -50%;
+      height: 2px;
+      background: var(--gray-200);
+      z-index: 0;
+    }
+    .timeline-step:last-child::before { display: none; }
+    .timeline-step.done::before { background: var(--primary); }
+    .timeline-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      z-index: 1;
+      position: relative;
+      border: 2px solid var(--gray-200);
+    }
+    .timeline-step.done .timeline-dot {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--white);
+    }
+    .timeline-step.current .timeline-dot {
+      background: var(--white);
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+    }
+    .timeline-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--gray-400);
+      margin-top: 6px;
+      text-align: center;
+    }
+    .timeline-step.done .timeline-label,
+    .timeline-step.current .timeline-label { color: var(--primary); }
+    .comment-form-area {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .action-panel {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .action-panel-header {
+      padding: 14px 18px;
+      background: var(--gray-50);
+      border-bottom: 1px solid var(--gray-200);
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: var(--gray-700);
+    }
+    .action-panel-body { padding: 16px 18px; }
+    .action-btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar" id="navbar"></header>
+
+  <main class="main-content" id="mainContent">
+    <div style="text-align:center;padding:60px;">
+      <div style="font-size:2rem;">⏳</div>
+      <div style="color:var(--gray-500);margin-top:8px;">Yükleniyor...</div>
+    </div>
+  </main>
+
+  <footer class="footer" id="footer"></footer>
+
+  <!-- Durum Güncelleme Modal -->
+  <div class="modal-overlay" id="statusModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">🔄 Durum Güncelle</h3>
+        <button class="modal-close" onclick="Modal.close('statusModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Yeni Durum</label>
+          <select class="form-control" id="newStatusSelect">
+            <option value="open">🔓 Açık</option>
+            <option value="in-progress">⚙️ İşlemde</option>
+            <option value="resolved">✅ Çözüldü</option>
+            <option value="closed">🔒 Kapandı</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Durum Notu (İsteğe Bağlı)</label>
+          <textarea class="form-control" id="statusNote" rows="3" placeholder="Durum değişikliği hakkında not ekleyin..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('statusModal')">İptal</button>
+        <button class="btn btn-primary" onclick="updateStatus()">Güncelle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atama Modal -->
+  <div class="modal-overlay" id="assignModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">👤 Talebi Üstlen / Ata</h3>
+        <button class="modal-close" onclick="Modal.close('assignModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Destek Personeli</label>
+          <select class="form-control" id="assignSelect">
+            <option value="">-- Atanmamış --</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('assignModal')">İptal</button>
+        <button class="btn btn-primary" onclick="assignTicket()">Ata</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Silme Onay Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🗑 Talebi Sil</h3>
+        <button class="modal-close" onclick="Modal.close('deleteModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger">
+          <span class="alert-icon">⚠️</span>
+          <span>Bu talebi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="Modal.close('deleteModal')">İptal</button>
+        <button class="btn btn-danger" onclick="deleteTicket()">Evet, Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let ticket = null;
+    let session = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!Auth.requireAuth('login.html')) return;
+      session = Auth.getSession();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const ticketId = parseInt(urlParams.get('id'));
+
+      if (!ticketId) {
+        showError('Geçersiz talep ID.');
+        return;
+      }
+
+      ticket = DataStore.Tickets.getById(ticketId);
+      if (!ticket) {
+        showError('Talep bulunamadı.');
+        return;
+      }
+
+      // Yetki kontrolü: kullanıcı sadece kendi ticketını görebilir
+      if (session.role === 'user' && ticket.userId !== session.userId) {
+        showError('Bu talebi görüntüleme yetkiniz yok.');
+        return;
+      }
+
+      renderPage();
+    });
+
+    function showError(msg) {
+      document.getElementById('mainContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">❌</div>
+          <div class="empty-state-title">${msg}</div>
+          <a href="user-tickets.html" class="btn btn-primary mt-3">Geri Dön</a>
+        </div>
+      `;
+    }
+
+    function renderPage() {
+      const owner = DataStore.Users.getById(ticket.userId);
+      const assignee = ticket.assignedTo ? DataStore.Users.getById(ticket.assignedTo) : null;
+      const isAdminOrSupport = session.role === 'admin' || session.role === 'support';
+      const backUrl = isAdminOrSupport ? 'admin-tickets.html' : 'user-tickets.html';
+
+      // Durum zaman çizelgesi
+      const statusOrder = ['open', 'in-progress', 'resolved', 'closed'];
+      const currentIdx = statusOrder.indexOf(ticket.status);
+
+      const timelineHtml = statusOrder.map((s, i) => {
+        let cls = '';
+        if (i < currentIdx) cls = 'done';
+        else if (i === currentIdx) cls = 'current';
+        const labels = { 'open': 'Açık', 'in-progress': 'İşlemde', 'resolved': 'Çözüldü', 'closed': 'Kapandı' };
+        const icons = { 'open': '🔓', 'in-progress': '⚙️', 'resolved': '✅', 'closed': '🔒' };
+        return `
+          <div class="timeline-step ${cls}">
+            <div class="timeline-dot">${icons[s]}</div>
+            <div class="timeline-label">${labels[s]}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Yorumlar
+      const commentsHtml = ticket.comments.length === 0 ? `
+        <div style="text-align:center;padding:30px;color:var(--gray-400);">
+          <div style="font-size:2rem;margin-bottom:8px;">💬</div>
+          <div>Henüz yorum yok. İlk yorumu siz yazın!</div>
+        </div>
+      ` : ticket.comments.map(c => {
+        const commentUser = DataStore.Users.getById(c.userId);
+        const isOwn = c.userId === session.userId;
+        const avatarClass = commentUser?.role === 'admin' ? 'admin-comment' : commentUser?.role === 'support' ? 'support-comment' : 'user-comment';
+        return `
+          <div class="comment">
+            <div class="comment-avatar ${avatarClass}">${Utils.getInitials(commentUser?.fullName || '?')}</div>
+            <div class="comment-bubble ${isOwn ? 'own' : ''}">
+              <div class="comment-header">
+                <span class="comment-author">${Utils.escapeHtml(commentUser?.fullName || 'Bilinmeyen')}</span>
+                <span class="role-badge ${commentUser?.role || 'user'}">${UserRole.labels[commentUser?.role || 'user']}</span>
+                <span class="comment-time">${Utils.timeAgo(c.createdAt)}</span>
+              </div>
+              <div class="comment-text">${Utils.escapeHtml(c.text)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Admin/Destek paneli
+      const adminActionsHtml = isAdminOrSupport ? `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="action-panel">
+            <div class="action-panel-header">⚡ Hızlı İşlemler</div>
+            <div class="action-panel-body">
+              <div class="action-btn-group">
+                ${ticket.status !== 'in-progress' && ticket.status !== 'closed' ? `
+                  <button class="btn btn-warning w-100" onclick="quickStatus('in-progress')">
+                    ⚙️ İşleme Al
+                  </button>
+                ` : ''}
+                ${ticket.status !== 'resolved' && ticket.status !== 'closed' ? `
+                  <button class="btn btn-success w-100" onclick="quickStatus('resolved')">
+                    ✅ Çözüldü Olarak İşaretle
+                  </button>
+                ` : ''}
+                ${ticket.status !== 'closed' ? `
+                  <button class="btn btn-secondary w-100" onclick="quickStatus('closed')">
+                    🔒 Talebi Kapat
+                  </button>
+                ` : `
+                  <button class="btn btn-outline w-100" onclick="quickStatus('open')">
+                    🔓 Yeniden Aç
+                  </button>
+                `}
+                <button class="btn btn-outline w-100" onclick="openStatusModal()">
+                  🔄 Durum Değiştir...
+                </button>
+                <button class="btn btn-outline w-100" onclick="openAssignModal()">
+                  👤 ${ticket.assignedTo ? 'Atamayı Değiştir' : 'Talebi Üstlen'}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="action-panel">
+            <div class="action-panel-header">🗑 Tehlikeli Bölge</div>
+            <div class="action-panel-body">
+              <button class="btn btn-outline-danger w-100" onclick="Modal.open('deleteModal')">
+                Talebi Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      ` : `
+        ${ticket.status !== 'closed' && ticket.status !== 'resolved' ? `
+          <div class="action-panel">
+            <div class="action-panel-header">⚡ İşlemler</div>
+            <div class="action-panel-body">
+              <button class="btn btn-outline-danger w-100" onclick="quickStatus('closed')">
+                🔒 Talebi Kapat
+              </button>
+            </div>
+          </div>
+        ` : ''}
+      `;
+
+      document.getElementById('mainContent').innerHTML = `
+        <div style="margin-bottom:16px;">
+          <a href="${backUrl}" style="color:var(--gray-400);font-size:0.875rem;display:inline-flex;align-items:center;gap:6px;">
+            ← Geri Dön
+          </a>
+        </div>
+
+        <div class="ticket-detail-header">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+              <span style="font-family:monospace;font-size:0.85rem;font-weight:700;color:var(--gray-400);background:var(--gray-100);padding:4px 10px;border-radius:var(--radius-sm);">${ticket.ticketNo}</span>
+              <span class="badge ${TicketStatus.badgeClass[ticket.status]}">
+                <span class="badge-dot"></span>
+                ${TicketStatus.labels[ticket.status]}
+              </span>
+              <span class="badge ${TicketPriority.badgeClass[ticket.priority]}">
+                ${TicketPriority.icons[ticket.priority]} ${TicketPriority.labels[ticket.priority]}
+              </span>
+              <span class="badge badge-category">${ticket.category}</span>
+            </div>
+            <h1 class="ticket-detail-title">${Utils.escapeHtml(ticket.title)}</h1>
+            <div class="ticket-detail-meta">
+              <span class="ticket-meta-item">👤 ${Utils.escapeHtml(owner?.fullName || 'Bilinmeyen')}</span>
+              <span class="ticket-meta-item">📅 ${Utils.formatDateTime(ticket.createdAt)}</span>
+              <span class="ticket-meta-item">🔄 ${Utils.timeAgo(ticket.updatedAt)}</span>
+              <span class="ticket-meta-item">💬 ${ticket.comments.length} yorum</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <!-- Sol: İçerik -->
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <!-- Açıklama -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📄 Açıklama</h3>
+              </div>
+              <div class="card-body">
+                <p style="color:var(--gray-700);line-height:1.8;white-space:pre-wrap;">${Utils.escapeHtml(ticket.description)}</p>
+              </div>
+            </div>
+
+            <!-- Durum Zaman Çizelgesi -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">📊 Süreç Durumu</h3>
+              </div>
+              <div class="card-body">
+                <div class="status-timeline">${timelineHtml}</div>
+              </div>
+            </div>
+
+            <!-- Yorumlar -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">💬 Yorumlar ve Yanıtlar</h3>
+                <span style="font-size:0.8rem;color:var(--gray-500);">${ticket.comments.length} yorum</span>
+              </div>
+              <div class="card-body">
+                <div class="comment-thread" id="commentThread">
+                  ${commentsHtml}
+                </div>
+
+                ${ticket.status !== 'closed' ? `
+                  <div class="comment-form-area">
+                    <div class="form-group" style="margin-bottom:12px;">
+                      <label class="form-label">
+                        ${isAdminOrSupport ? '📝 Yanıt Yaz' : '💬 Yorum Ekle'}
+                      </label>
+                      <textarea
+                        class="form-control"
+                        id="commentText"
+                        rows="4"
+                        placeholder="${isAdminOrSupport ? 'Müşteriye yanıtınızı yazın...' : 'Sorunuz veya ek bilginizi yazın...'}"
+                        maxlength="1000"
+                      ></textarea>
+                      <div style="font-size:0.75rem;color:var(--gray-400);text-align:right;margin-top:4px;" id="commentCharCount">0 / 1000</div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;">
+                      <button class="btn btn-primary" onclick="addComment()">
+                        <span>📤</span>
+                        ${isAdminOrSupport ? 'Yanıtla' : 'Yorum Ekle'}
+                      </button>
+                    </div>
+                  </div>
+                ` : `
+                  <div class="alert alert-info" style="margin-top:16px;">
+                    <span class="alert-icon">ℹ️</span>
+                    <span>Bu talep kapatılmıştır. Yeni yorum eklenemez.</span>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+
+          <!-- Sağ: Bilgi Paneli -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <!-- Talep Bilgileri -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">ℹ️ Talep Bilgileri</h3>
+              </div>
+              <div class="card-body" style="padding:0 24px;">
+                <div class="info-list">
+                  <div class="info-item">
+                    <span class="info-key">Talep No</span>
+                    <span class="info-value" style="font-family:monospace;">${ticket.ticketNo}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Durum</span>
+                    <span class="info-value">
+                      <span class="badge ${TicketStatus.badgeClass[ticket.status]}">
+                        <span class="badge-dot"></span>${TicketStatus.labels[ticket.status]}
+                      </span>
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Öncelik</span>
+                    <span class="info-value">
+                      <span class="badge ${TicketPriority.badgeClass[ticket.priority]}">
+                        ${TicketPriority.icons[ticket.priority]} ${TicketPriority.labels[ticket.priority]}
+                      </span>
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Kategori</span>
+                    <span class="info-value"><span class="badge badge-category">${ticket.category}</span></span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Oluşturan</span>
+                    <span class="info-value">${Utils.escapeHtml(owner?.fullName || '-')}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Atanan</span>
+                    <span class="info-value" id="assigneeDisplay">
+                      ${assignee ? Utils.escapeHtml(assignee.fullName) : '<span style="color:var(--gray-400);">Atanmamış</span>'}
+                    </span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Oluşturma</span>
+                    <span class="info-value">${Utils.formatDateTime(ticket.createdAt)}</span>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-key">Son Güncelleme</span>
+                    <span class="info-value">${Utils.timeAgo(ticket.updatedAt)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin/Destek Eylemleri -->
+            ${adminActionsHtml}
+          </div>
+        </div>
+      `;
+
+      // Yorum karakter sayacı
+      const commentInput = document.getElementById('commentText');
+      if (commentInput) {
+        commentInput.addEventListener('input', () => {
+          document.getElementById('commentCharCount').textContent = `${commentInput.value.length} / 1000`;
+        });
+      }
+    }
+
+    function addComment() {
+      const text = document.getElementById('commentText')?.value?.trim();
+      if (!text) {
+        Toast.warning('Lütfen bir yorum yazın.');
+        return;
+      }
+      if (text.length < 5) {
+        Toast.warning('Yorum en az 5 karakter olmalıdır.');
+        return;
+      }
+
+      DataStore.Tickets.addComment(ticket.id, session.userId, text);
+      ticket = DataStore.Tickets.getById(ticket.id);
+      Toast.success('Yorumunuz eklendi.');
+      renderPage();
+      // Yorumlara scroll
+      setTimeout(() => {
+        const thread = document.getElementById('commentThread');
+        if (thread) thread.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+    }
+
+    function quickStatus(newStatus) {
+      DataStore.Tickets.update(ticket.id, { status: newStatus });
+      ticket = DataStore.Tickets.getById(ticket.id);
+      Toast.success(`Durum "${TicketStatus.labels[newStatus]}" olarak güncellendi.`);
+      renderPage();
+    }
+
+    function openStatusModal() {
+      document.getElementById('newStatusSelect').value = ticket.status;
+      document.getElementById('statusNote').value = '';
+      Modal.open('statusModal');
+    }
+
+    function updateStatus() {
+      const newStatus = document.getElementById('newStatusSelect').value;
+      const note = document.getElementById('statusNote').value.trim();
+
+      DataStore.Tickets.update(ticket.id, { status: newStatus });
+
+      if (note) {
+        DataStore.Tickets.addComment(ticket.id, session.userId,
+          `[Durum Güncellendi: ${TicketStatus.labels[newStatus]}] ${note}`);
+      }
+
+      ticket = DataStore.Tickets.getById(ticket.id);
+      Modal.close('statusModal');
+      Toast.success('Durum güncellendi.');
+      renderPage();
+    }
+
+    function openAssignModal() {
+      const supportUsers = DataStore.Users.getAll().filter(u => u.role === 'support' || u.role === 'admin');
+      const select = document.getElementById('assignSelect');
+      select.innerHTML = '<option value="">-- Atanmamış --</option>';
+      supportUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = `${u.fullName} (${UserRole.labels[u.role]})`;
+        if (ticket.assignedTo === u.id) opt.selected = true;
+        select.appendChild(opt);
+      });
+      Modal.open('assignModal');
+    }
+
+    function assignTicket() {
+      const val = document.getElementById('assignSelect').value;
+      const assignedTo = val ? parseInt(val) : null;
+      DataStore.Tickets.update(ticket.id, { assignedTo });
+
+      if (assignedTo) {
+        const assignee = DataStore.Users.getById(assignedTo);
+        DataStore.Tickets.addComment(ticket.id, session.userId,
+          `[Atama] Talep ${assignee.fullName} tarafından üstlenildi.`);
+      }
+
+      ticket = DataStore.Tickets.getById(ticket.id);
+      Modal.close('assignModal');
+      Toast.success(assignedTo ? 'Talep atandı.' : 'Atama kaldırıldı.');
+      renderPage();
+    }
+
+    function deleteTicket() {
+      DataStore.Tickets.delete(ticket.id);
+      Modal.close('deleteModal');
+      Toast.success('Talep silindi.');
+      const isAdminOrSupport = session.role === 'admin' || session.role === 'support';
+      setTimeout(() => window.location.href = isAdminOrSupport ? 'admin-tickets.html' : 'user-tickets.html', 800);
+    }
+  </script>
+</body>
+</html>
