@@ -1,0 +1,6 @@
+**/[Bb]in/
+**/[Oo]bj/
+.git/
+.github/
+.vscode/
+*.user
