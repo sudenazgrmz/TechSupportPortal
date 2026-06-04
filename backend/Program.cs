@@ -10,10 +10,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using TicketSystem.Api.ViewModels;
 
 var builder = WebApplication.CreateBuilder(args);
-var workspaceRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.FullName ?? builder.Environment.ContentRootPath;
-var appRoot = Directory.Exists(Path.Combine(workspaceRoot, "ticket-system"))
-    ? Path.Combine(workspaceRoot, "ticket-system")
-    : workspaceRoot;
+
+string appRoot;
+if (Directory.Exists("/data"))
+{
+    appRoot = "/"; 
+}
+else
+{
+    var workspaceRoot = Directory.GetParent(builder.Environment.ContentRootPath)?.FullName ?? builder.Environment.ContentRootPath;
+    appRoot = Directory.Exists(Path.Combine(workspaceRoot, "ticket-system"))
+        ? Path.Combine(workspaceRoot, "ticket-system")
+        : workspaceRoot;
+}
 
 builder.Services.AddSingleton(new TicketRepository(appRoot));
 builder.Services.AddControllersWithViews();
@@ -37,10 +46,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var app = builder.Build();
-var staticRoot = new PhysicalFileProvider(appRoot);
 
-app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = staticRoot });
-app.UseStaticFiles(new StaticFileOptions { FileProvider = staticRoot });
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
